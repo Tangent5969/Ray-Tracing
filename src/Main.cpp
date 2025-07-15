@@ -5,11 +5,11 @@
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
 
-#include "Shader.h"
-#include "VAO.h"
-#include "VBO.h"
-#include "EBO.h"
-#include "Camera.h"
+#include "headers/Shader.h"
+#include "headers/VAO.h"
+#include "headers/VBO.h"
+#include "headers/EBO.h"
+#include "headers/Camera.h"
 
 // globals
 const int INITIAL_WIDTH = 1280;
@@ -69,7 +69,7 @@ int main() {
 	glViewport(0, 0, width, height);
 
 
-	Shader shader("Default.vert", "Default.frag");
+	Shader shader("./src/shaders/Default.vert", "./src/shaders/Default.frag");
 
 
 	VAO VAO;
