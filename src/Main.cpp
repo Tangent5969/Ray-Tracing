@@ -10,6 +10,9 @@
 #include "headers/VBO.h"
 #include "headers/EBO.h"
 #include "headers/Camera.h"
+#include "headers/Object.h"
+#include "headers/UBO.h"
+#include "headers/Uniforms.h"
 
 // globals
 const int INITIAL_WIDTH = 1280;
@@ -30,8 +33,8 @@ void framebuffer_size_callback(GLFWwindow* window, int x, int y);
 int main() {
 	glfwInit();
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 
@@ -84,23 +87,50 @@ int main() {
 	VBO.unBind();
 	EBO.unBind();
 
+	UBO UBO;
+	Uniforms uni;
+
+
+
 	// resize window
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
 	
+
+	// sphere objects
+	const int spheresLength = 3;
+	Sphere spheres[spheresLength]; // 36
+	spheres[0].pos = glm::vec3(0, 0, 3);
+	spheres[0].radius = 0.6;
+	spheres[0].color = glm::vec3(0.5, 0.2, 0.8);
+
+	spheres[1].pos = glm::vec3(1.5, 5, 1);
+	spheres[1].radius = 0.4;
+	spheres[1].color = glm::vec3(0.8, 0.8, 0.8);
+
+	spheres[2].pos = glm::vec3(-2, 1.2, 0);
+	spheres[2].radius = 0.8;
+	spheres[2].color = glm::vec3(0.5, 0.7, 0.2);
+
+
+
+	// delta time setup
 	float currentTime, dt;
 	float prevTime = glfwGetTime();
 
+	// main loop
 	while (!glfwWindowShouldClose(window)) {
 
 		// input first
 		currentTime = glfwGetTime();
 		dt = currentTime - prevTime;
 		prevTime = currentTime;
+		cam.updateDT(dt);
 		input(window, dt);
-		cam.updateModel();
+
 
 		// position debug
-		std::cout << cam.pos.x << " " << cam.pos.y << " " << cam.pos.z << std::endl; //"			 dir " << cam.direction.x << " " << cam.direction.y << " " << cam.direction.z << std::endl;
+		//std::cout << cam.pos.x << " " << cam.pos.y << " " << cam.pos.z << std::endl; //"			 dir " << cam.direction.x << " " << cam.direction.y << " " << cam.direction.z << std::endl;
 
 
 		// render stuff
@@ -111,15 +141,10 @@ int main() {
 
 
 		// uniforms
-		int camPosLocation = glGetUniformLocation(shader.program, "camPos");
-		glUniform3fv(camPosLocation, 1, glm::value_ptr(cam.pos));
-		int modelLocation = glGetUniformLocation(shader.program, "model");
-		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(cam.model));
-		int resLocation = glGetUniformLocation(shader.program, "res");
-		glUniform2f(resLocation, width, height);
-		int focusLocation = glGetUniformLocation(shader.program, "focus");
-		glUniform1f(focusLocation, cam.focus);
-	
+		uni.init(shader.program);
+		uni.update(cam.pos, cam.model, width, height, cam.focus, spheresLength);
+		UBO.build(shader.program, spheres, spheresLength);
+
 
 		VAO.bind();
 
@@ -133,6 +158,7 @@ int main() {
 	VAO.deleteVAO();
 	VBO.deleteVBO();
 	EBO.deleteEBO();
+	UBO.deleteUBO();
 	shader.deleteShader();
 
 	glfwDestroyWindow(window);
@@ -167,6 +193,6 @@ void mouse_position_callback(GLFWwindow* window, double xPos, double yPos) {
 void input(GLFWwindow* window, float dt) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) 
 		glfwSetWindowShouldClose(window, true);
-	cam.input(window, dt);
+	cam.input(window);
 }
 

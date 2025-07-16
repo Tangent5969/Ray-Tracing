@@ -2,6 +2,7 @@
 
 Camera::Camera(int width, int height, float fov) {
 
+	this->dt = 0;
 	this->fov = fov;
 	this->width = width;
 	this->height = height;
@@ -13,7 +14,7 @@ Camera::Camera(int width, int height, float fov) {
 	up = glm::vec3(0, 1, 0);
 	side = glm::normalize(glm::cross(direction, up));
 	rotation = glm::vec3(0);
-	updateModel();
+	model = glm::mat4(1);
 
 }
 
@@ -28,7 +29,7 @@ void Camera::updateFov(float fov) {
 	focus = width / (2 * glm::tan(fov / 2));
 }
 
-void Camera::input(GLFWwindow* window, float dt) {
+void Camera::input(GLFWwindow* window) {
 	float speed = 1.0f * dt;
 
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -46,7 +47,7 @@ void Camera::input(GLFWwindow* window, float dt) {
 }
 
 void Camera::mouseInput(GLFWwindow* window, float dx, float dy) {
-	float sensitivity = 0.2f;
+	float sensitivity = 7.0f * dt;
 	rotation.x = dx * sensitivity;
 	rotation.y = dy * sensitivity;
 
@@ -62,8 +63,12 @@ void Camera::mouseInput(GLFWwindow* window, float dx, float dy) {
 	direction = direction * rotateX;
 	side = side * rotateX;
 	up = up * rotateX;
+
+
+	model = glm::mat4(glm::mat3(side, up, direction));
 }
 
-void Camera::updateModel() {
-	model = glm::mat4(glm::mat3(side, up, direction));
+
+void Camera::updateDT(float dt) {
+	this->dt = dt;
 }

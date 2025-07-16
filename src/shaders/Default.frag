@@ -1,10 +1,13 @@
-#version 330 core
+#version 420 core
+#define maxSpheres 100
+
 out vec4 FragColor;
 
 uniform vec3 camPos;
 uniform mat4 model;
 uniform vec2 res;
 uniform float focus;
+uniform int spheresLength;
 
 struct Ray {
 	vec3 origin;
@@ -13,9 +16,14 @@ struct Ray {
 };
 
 struct Sphere {
-	vec3 pos;
-	float radius;
-	vec3 color;
+	vec3 pos; // 16
+	float radius; // 4
+	vec3 color; // 16
+};
+
+
+layout(std140) uniform objects {
+	Sphere spheres[maxSpheres];
 };
 
 bool intersect(Ray ray, Sphere sphere) {
@@ -39,21 +47,19 @@ void main() {
 	float y = -res.y / 2 + gl_FragCoord.y;
 	
 	
-	Sphere sphere1;
-	sphere1.pos = vec3(0, 0, 3);
-	sphere1.radius = 0.6;
-	sphere1.color = vec3(0.5, 0.2, 0.8);
-	
 	Ray ray;
-	ray.color = vec3(0.0, 0.0, 0.0);
+	ray.color = vec3(0.0, 0.2, 0.0);
 	ray.origin = camPos;
 	ray.dir = normalize(vec3(x, y, focus));
 	ray.dir = (model * vec4(ray.dir, 1.0)).xyz;
-	
-	if (intersect(ray, sphere1))	
-		ray.color = sphere1.color;
+
+
+	for (int i = 0; i < spheresLength; i++) {
+		if (intersect(ray, spheres[i]))	
+			ray.color = spheres[i].color;
+		}
 
 
 	FragColor = vec4(ray.color, 1.0);
-	//FragColor = vec4(ray.dir, 1);
+
 };

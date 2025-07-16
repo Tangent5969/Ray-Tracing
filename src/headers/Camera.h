@@ -15,11 +15,12 @@ public:
 	Camera(int width, int height, float fov);
 	void updateRes(int width, int height);
 	void updateFov(float fov);
-	void input(GLFWwindow* window, float dt);
+	void input(GLFWwindow* window);
 	void mouseInput(GLFWwindow* window, float dx, float dy);
-	void updateModel();
+	void updateDT(float dt);
 
 private:
+	float dt;
 	float fov;
 	int width;
 	int height;
