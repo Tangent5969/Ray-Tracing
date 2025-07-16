@@ -8,7 +8,7 @@
 class Uniforms {
 public:
 	void init(GLuint program);
-	void update(glm::vec3 camPos, glm::mat4 camModel, float screenW, float screenH, float camFocus, int spheresLength);
+	void update(glm::vec3 camPos, glm::mat4 camModel, float screenW, float screenH, float camFocus, int spheresLength, int seed);
 
 private:
 	GLuint program;
@@ -18,6 +18,7 @@ private:
 	GLuint resLocation;
 	GLuint focusLocation;
 	GLuint spheresLengthLocation;
+	GLuint seedLocation;
 
 };
 

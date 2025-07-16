@@ -1,5 +1,6 @@
 #version 420 core
 #define maxSpheres 100
+#define maxBounces 5
 
 out vec4 FragColor;
 
@@ -8,12 +9,15 @@ uniform mat4 model;
 uniform vec2 res;
 uniform float focus;
 uniform int spheresLength;
+uniform uint seed;
+uint newSeed = seed;
+
 
 struct Ray {
 	vec3 origin;
 	vec3 dir;
-	vec3 color;
 };
+
 
 struct Sphere {
 	vec3 pos; // 16
@@ -21,45 +25,116 @@ struct Sphere {
 	vec3 color; // 16
 };
 
+struct hitData {
+	bool didHit;
+	float dist;
+	vec3 pos;
+	vec3 normal;
+	vec3 color;
+};
+
 
 layout(std140) uniform objects {
 	Sphere spheres[maxSpheres];
 };
 
-bool intersect(Ray ray, Sphere sphere) {
+// https://www.shadertoy.com/view/XlGcRh
+float random(inout uint state) {
+	state = state * 747796405 + 2891336453;
+	uint result = ((state >> ((state >> 28) + 4)) ^ state) * 277803737;
+	result = (result >> 22) ^ result;
+	return result / 4294967295.0; // 2^32 - 1
+}
+
+
+hitData intersect(Ray ray, Sphere sphere) {
+	hitData hit;
+	hit.didHit = false;
+
+	// setting up quadratic
 	vec3 a = sphere.pos - ray.origin;
 	float b = dot(ray.dir, a);
 	float c = dot(a, a) - sphere.radius * sphere.radius;
 	float d = b * b - c;
 	float dist1, dist2;
+
 	if (d >= 0) {
 		dist1 = b + sqrt(d);
 		dist2 = b - sqrt(d);
-		if (dist1 >= 0 || dist2 >= 0) return true;
-		return false;
+		if (dist1 > dist2) {
+			// swap (smallest value in dist1)
+			float temp = dist1;
+			dist1 = dist2;
+			dist2 = temp;
+		}
+		if (dist1 < 0) {
+			dist1 = dist2;
+			// missed
+			if (dist1 < 0) return hit;
+		}
+		// hit
+		hit.dist = dist1;
+		hit.didHit = true;
+		hit.pos = ray.origin + ray.dir * dist1;
+		hit.normal = normalize(hit.pos - sphere.pos);
 	}
-	return false;
+	return hit;
 };
+
+
+hitData getCollision(Ray ray) {
+	hitData result;
+	result.dist = 9999;
+
+	for (int i = 0; i < spheresLength; i++) {
+		hitData hit = intersect(ray, spheres[i]);
+		if (hit.didHit) {
+			if (hit.dist < result.dist) {
+				result = hit;
+				result.color = spheres[i].color;
+			}
+		}
+	}
+	return result;
+};
+
+vec3 randBounce(vec3 normal) {
+	vec3 bounce = vec3(1);
+	bounce.x = random(newSeed) * 2 - 1;
+	bounce.y = random(newSeed) * 2 - 1;
+	bounce.z = random(newSeed) * 2 - 1;
+
+	return normalize(bounce) * sign(dot(normal, bounce));
+}
 	
 
 void main() {
+	
 	float x = -res.x / 2 + gl_FragCoord.x;
 	float y = -res.y / 2 + gl_FragCoord.y;
 	
-	
 	Ray ray;
-	ray.color = vec3(0.0, 0.2, 0.0);
 	ray.origin = camPos;
 	ray.dir = normalize(vec3(x, y, focus));
 	ray.dir = (model * vec4(ray.dir, 1.0)).xyz;
 
+	vec3 color = vec3(1.0);
 
-	for (int i = 0; i < spheresLength; i++) {
-		if (intersect(ray, spheres[i]))	
-			ray.color = spheres[i].color;
+	for (int i = 0; i < maxBounces; i++) {
+		hitData hit = getCollision(ray);
+		if (hit.didHit) {
+			color *= hit.color;
+			ray.origin = hit.pos;
+			ray.dir = randBounce(hit.normal);
+			break;
+
 		}
+		else break;
+	}
 
+	
+	FragColor = vec4(color, 1.0);
+		
 
-	FragColor = vec4(ray.color, 1.0);
 
 };

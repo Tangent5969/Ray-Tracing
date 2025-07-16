@@ -91,11 +91,9 @@ int main() {
 	Uniforms uni;
 
 
-
 	// resize window
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-	
 
 	// sphere objects
 	const int spheresLength = 3;
@@ -117,6 +115,8 @@ int main() {
 	// delta time setup
 	float currentTime, dt;
 	float prevTime = glfwGetTime();
+	srand(time(NULL));
+
 
 	// main loop
 	while (!glfwWindowShouldClose(window)) {
@@ -142,7 +142,7 @@ int main() {
 
 		// uniforms
 		uni.init(shader.program);
-		uni.update(cam.pos, cam.model, width, height, cam.focus, spheresLength);
+		uni.update(cam.pos, cam.model, width, height, cam.focus, spheresLength, rand());
 		UBO.build(shader.program, spheres, spheresLength);
 
 
