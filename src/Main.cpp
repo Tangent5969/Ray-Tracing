@@ -140,7 +140,7 @@ int main() {
 
 
 		// position debug
-		//std::cout << cam.pos.x << " " << cam.pos.y << " " << cam.pos.z << std::endl; //"			 dir " << cam.direction.x << " " << cam.direction.y << " " << cam.direction.z << std::endl;
+		std::cout << cam.pos.x << " " << cam.pos.y << " " << cam.pos.z << std::endl; //"			 dir " << cam.direction.x << " " << cam.direction.y << " " << cam.direction.z << std::endl;
 
 
 		// render stuff
@@ -195,8 +195,7 @@ void mouse_position_callback(GLFWwindow* window, double xPos, double yPos) {
 	prevX = x;
 	prevY = y;
 
-	cam.mouseInput(window, dx, dy);
-
+	cam.mouseInput(dx, dy);
 }
 
 // keyboard

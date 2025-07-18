@@ -145,7 +145,6 @@ void main() {
 	
 	FragColor = vec4(color, 1.0);
 
-	// issue with scene rotation
 	//FragColor = vec4(ray.dir, 1.0);
 		
 };

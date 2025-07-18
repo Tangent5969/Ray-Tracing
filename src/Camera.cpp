@@ -1,19 +1,16 @@
 #include "headers/Camera.h"
 
 Camera::Camera(int width, int height, float fov) {
-
 	this->dt = 0;
 	this->fov = fov;
 	this->width = width;
 	this->height = height;
 
-
 	focus = width / (2 * glm::tan(fov / 2));
 	pos = glm::vec3(0, 0, -1);
-	direction = glm::vec3(0.0f, 0.0f, 1.0f);
-	up = glm::vec3(0, 1, 0);
-	side = glm::normalize(glm::cross(direction, up));
-	rotation = glm::vec3(0);
+	direction = originalDirection;
+	up = originalUp;
+	side = originalSide;
 	model = glm::mat4(1);
 
 }
@@ -46,26 +43,18 @@ void Camera::input(GLFWwindow* window) {
 		pos -= speed * up;
 }
 
-void Camera::mouseInput(GLFWwindow* window, float dx, float dy) {
-	float sensitivity = 7.0f * dt;
-	rotation.x = dx * sensitivity;
-	rotation.y = dy * sensitivity;
+void Camera::mouseInput(float dx, float dy) {
+	rotation.x += dx * dt * sensitivity;
+	rotation.y += dy * dt * sensitivity;
 
-	glm::mat3 rotateY = glm::rotate(glm::mat4(1.0), glm::radians(rotation.x), up);
-	glm::mat3 rotateX = glm::rotate(glm::mat4(1.0), glm::radians(rotation.y), side);
+	glm::mat3 rotateX = glm::rotate(glm::mat4(1.0), glm::radians(rotation.x), originalUp);
+	glm::mat3 rotateY = glm::rotate(glm::mat4(1.0), glm::radians(rotation.y), originalSide);
+	glm::mat3 finalRotate = rotateX * rotateY;
 
-	// yaw
-	direction = direction * rotateY;
-	side = side * rotateY;
-	up = up * rotateY;
-
-	// pitch
-	direction = direction * rotateX;
-	side = side * rotateX;
-	up = up * rotateX;
-
-
-	model = glm::mat4(glm::mat3(side, up, direction));
+	model = finalRotate * glm::mat3(originalSide, originalUp, originalDirection);
+	side = model[0];
+	up = model[1];
+	direction = model[2];
 }
 
 
