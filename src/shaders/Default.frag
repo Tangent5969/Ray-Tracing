@@ -1,6 +1,7 @@
 #version 420 core
 #define maxSpheres 100
-#define maxBounces 5
+#define maxMaterials 100
+#define maxBounces 1
 
 out vec4 FragColor;
 
@@ -18,11 +19,22 @@ struct Ray {
 	vec3 dir;
 };
 
+struct material {
+	vec3 color; // 12
+	float pad1; // 4
+	vec3 lightStrength; // 12
+	float pad2; // 4
+	vec3 lightColor; // 12
+	float pad3; // 4
+};
+
 
 struct Sphere {
-	vec3 pos; // 16
+	vec3 pos; // 12
 	float radius; // 4
-	vec3 color; // 16
+	vec3 color; // 12
+	float pad; // 4
+
 };
 
 struct hitData {
@@ -126,15 +138,14 @@ void main() {
 			color *= hit.color;
 			ray.origin = hit.pos;
 			ray.dir = randBounce(hit.normal);
-			break;
-
 		}
 		else break;
 	}
 
 	
 	FragColor = vec4(color, 1.0);
+
+	// issue with scene rotation
+	//FragColor = vec4(ray.dir, 1.0);
 		
-
-
 };

@@ -95,16 +95,26 @@ int main() {
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 
+	// materials
+	const int materialsLength = 3;
+	Material materials[materialsLength];
+	materials[0].color = glm::vec3(0.5, 0.2, 0.8);
+	materials[1].color = glm::vec3(0.8, 0.8, 0.8);
+	materials[2].color = glm::vec3(0.5, 0.7, 0.2);
+
+
 	// sphere objects
 	const int spheresLength = 3;
-	Sphere spheres[spheresLength]; // 36
+	Sphere spheres[spheresLength];
 	spheres[0].pos = glm::vec3(0, 0, 3);
 	spheres[0].radius = 0.6;
 	spheres[0].color = glm::vec3(0.5, 0.2, 0.8);
 
-	spheres[1].pos = glm::vec3(1.5, 5, 1);
+	
+	spheres[1].pos = glm::vec3(1.5, 3, 1);
 	spheres[1].radius = 0.4;
 	spheres[1].color = glm::vec3(0.8, 0.8, 0.8);
+
 
 	spheres[2].pos = glm::vec3(-2, 1.2, 0);
 	spheres[2].radius = 0.8;
