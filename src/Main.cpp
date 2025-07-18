@@ -195,8 +195,7 @@ void mouse_position_callback(GLFWwindow* window, double xPos, double yPos) {
 	prevX = x;
 	prevY = y;
 
-	cam.mouseInput(window, dx, dy);
-
+	cam.mouseInput(dx, dy);
 }
 
 // keyboard

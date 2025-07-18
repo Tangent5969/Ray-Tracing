@@ -46,26 +46,15 @@ void Camera::input(GLFWwindow* window) {
 		pos -= speed * up;
 }
 
-void Camera::mouseInput(GLFWwindow* window, float dx, float dy) {
-	float sensitivity = 7.0f * dt;
-	rotation.x = dx * sensitivity;
-	rotation.y = dy * sensitivity;
+void Camera::mouseInput(float dx, float dy) {
+	rotation.x -= dx * dt * sensitivity;
+	rotation.y -= dy * dt * sensitivity;
 
-	glm::mat3 rotateY = glm::rotate(glm::mat4(1.0), glm::radians(rotation.x), up);
-	glm::mat3 rotateX = glm::rotate(glm::mat4(1.0), glm::radians(rotation.y), side);
+	glm::mat3 rotateX = glm::rotate(glm::mat4(1.0), glm::radians(rotation.x), up);
+	glm::mat3 rotateY = glm::rotate(glm::mat4(1.0), glm::radians(rotation.y), side);
+	glm::mat3 finalRotate = rotateX * rotateY;
 
-	// yaw
-	direction = direction * rotateY;
-	side = side * rotateY;
-	up = up * rotateY;
-
-	// pitch
-	direction = direction * rotateX;
-	side = side * rotateX;
-	up = up * rotateX;
-
-
-	model = glm::mat4(glm::mat3(side, up, direction));
+	model = finalRotate * glm::mat3(side, up, direction);
 }
 
 
