@@ -58,6 +58,7 @@ int main() {
 	}
 
 	glfwMakeContextCurrent(window);
+	//glfwSwapInterval(0); // disable Vsync
 	glfwSetCursorPosCallback(window, mouse_position_callback);
 
 	// mouse mode
@@ -68,12 +69,10 @@ int main() {
 		return -1;
 	}
 
-
 	glViewport(0, 0, width, height);
 
 
 	Shader shader("./src/shaders/Default.vert", "./src/shaders/Default.frag");
-
 
 	VAO VAO;
 	VAO.bind();
@@ -96,37 +95,57 @@ int main() {
 
 
 	// materials
-	const int materialsLength = 3;
-	Material materials[materialsLength];
+	Material materials[5];
 	materials[0].color = glm::vec3(0.5, 0.2, 0.8);
-	materials[1].color = glm::vec3(0.8, 0.8, 0.8);
+	materials[0].lightStrength = 0.8;
+	materials[0].lightColor = glm::vec3(0.5, 0.2, 0.8);
+
+	materials[1].color = glm::vec3(0.11, 0.804, 0.851);
+	materials[1].lightStrength = 2;
+	materials[1].lightColor = glm::vec3(1);
+
 	materials[2].color = glm::vec3(0.5, 0.7, 0.2);
+	materials[2].lightStrength = 0;
+	materials[2].lightColor = glm::vec3(0);
+
+	materials[3].color = glm::vec3(0.8, 0.25, 0.25);
+	materials[3].lightStrength = 0;
+	materials[3].lightColor = glm::vec3(0);
+
+	// star
+	materials[4].color = glm::vec3(0);
+	materials[4].lightStrength = 10;
+	materials[4].lightColor = glm::vec3(1, 0.9, 1);
 
 
 	// sphere objects
-	const int spheresLength = 3;
+	const int spheresLength = 5;
 	Sphere spheres[spheresLength];
 	spheres[0].pos = glm::vec3(0, 0, 3);
 	spheres[0].radius = 0.6;
-	spheres[0].color = glm::vec3(0.5, 0.2, 0.8);
+	spheres[0].mat = materials[0];
 
-	
-	spheres[1].pos = glm::vec3(1.5, 3, 1);
+	spheres[1].pos = glm::vec3(-3, 3, 1);
 	spheres[1].radius = 0.4;
-	spheres[1].color = glm::vec3(0.8, 0.8, 0.8);
-
+	spheres[1].mat = materials[1];
 
 	spheres[2].pos = glm::vec3(-2, 1.2, 0);
 	spheres[2].radius = 0.8;
-	spheres[2].color = glm::vec3(0.5, 0.7, 0.2);
+	spheres[2].mat = materials[2];
 
+	spheres[3].pos = glm::vec3(0, -10, 0);
+	spheres[3].radius = 9;
+	spheres[3].mat = materials[3];
+
+	// star
+	spheres[4].pos = glm::vec3(300, 400, -180);
+	spheres[4].radius = 50;
+	spheres[4].mat = materials[4];
 
 
 	// delta time setup
 	float currentTime, dt;
 	float prevTime = glfwGetTime();
-	srand(time(NULL));
-
 
 	// main loop
 	while (!glfwWindowShouldClose(window)) {
@@ -141,6 +160,9 @@ int main() {
 
 		// position debug
 		//std::cout << cam.pos.x << " " << cam.pos.y << " " << cam.pos.z << std::endl; //"			 dir " << cam.direction.x << " " << cam.direction.y << " " << cam.direction.z << std::endl;
+		
+		// fps
+		std::cout << int (1 / dt) << std::endl;
 
 
 		// render stuff
@@ -152,7 +174,7 @@ int main() {
 
 		// uniforms
 		uni.init(shader.program);
-		uni.update(cam.pos, cam.model, width, height, cam.focus, spheresLength, rand());
+		uni.update(cam.pos, cam.model, width, height, cam.focus, spheresLength);
 		UBO.build(shader.program, spheres, spheresLength);
 
 
