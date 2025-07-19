@@ -1,7 +1,7 @@
 #version 420 core
 #define maxSpheres 100
 #define maxMaterials 100
-#define maxRays 5
+#define maxRays 3
 #define maxBounces 10
 
 out vec4 FragColor;

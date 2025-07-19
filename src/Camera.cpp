@@ -1,6 +1,7 @@
 #include "headers/Camera.h"
 
 Camera::Camera(int width, int height, float fov) {
+	this->sensitivity = 5.0f;
 	this->dt = 0;
 	this->fov = fov;
 	this->width = width;
@@ -29,6 +30,11 @@ void Camera::updateFov(float fov) {
 void Camera::input(GLFWwindow* window) {
 	float speed = 1.0f * dt;
 
+	// sprint
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+		speed *= 3;
+
+	// movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 		pos += speed * direction;
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -39,13 +45,29 @@ void Camera::input(GLFWwindow* window) {
 		pos -= speed * side;
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
 		pos += speed * up;
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 		pos -= speed * up;
+
+	// camera (low fps movement)
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+		mouseInput(-1, 0, false);
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+		mouseInput(1, 0, false);
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+		mouseInput(0, -1, false);
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+		mouseInput(0, 1, false);
 }
 
-void Camera::mouseInput(float dx, float dy) {
-	rotation.x += dx * dt * sensitivity;
-	rotation.y += dy * dt * sensitivity;
+void Camera::mouseInput(float dx, float dy, bool mouse) {
+	if (mouse) {
+		rotation.x += dx * dt * sensitivity;
+		rotation.y += dy * dt * sensitivity;
+	}
+	else {
+		rotation.x += dx;
+		rotation.y += dy;
+	}
 
 	glm::mat3 rotateX = glm::rotate(glm::mat4(1.0), glm::radians(rotation.x), originalUp);
 	glm::mat3 rotateY = glm::rotate(glm::mat4(1.0), glm::radians(rotation.y), originalSide);

@@ -5,8 +5,6 @@
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 
-#define sensitivity 7.0f;
-
 class Camera {
 public:
 	float focus;
@@ -17,7 +15,7 @@ public:
 	void updateRes(int width, int height);
 	void updateFov(float fov);
 	void input(GLFWwindow* window);
-	void mouseInput(float dx, float dy);
+	void mouseInput(float dx, float dy, bool mouse);
 	void updateDT(float dt);
 
 private:
@@ -25,6 +23,7 @@ private:
 	const glm::vec3 originalUp = glm::vec3(0, 1, 0);
 	const glm::vec3 originalDirection = glm::vec3(0, 0, 1);
 
+	float sensitivity;
 	float dt;
 	float fov;
 	int width;
