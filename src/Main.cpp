@@ -8,11 +8,11 @@
 #include "headers/Shader.h"
 #include "headers/VAO.h"
 #include "headers/VBO.h"
-#include "headers/EBO.h"
 #include "headers/Camera.h"
 #include "headers/Object.h"
 #include "headers/UBO.h"
 #include "headers/Uniforms.h"
+#include "headers/FBO.h"
 
 // globals
 const int INITIAL_WIDTH = 1280;
@@ -21,6 +21,7 @@ int width = INITIAL_WIDTH;
 int height = INITIAL_HEIGHT;
 float prevX = 0.0f;
 float prevY = 0.0f;
+bool resize = false;
 Camera cam(width, height, 45.0f);
 
 
@@ -39,16 +40,16 @@ int main() {
 
 
 	GLfloat vertices[] = {
-		-1.0f, -1.0f, 0.0f,
-		-1.0f, 1.0f, 0.0f,
-		1.0f, -1.0f, 0.0f,
-		1.0f, 1.0f, 0.0f
+		// positions   // texCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		 1.0f, -1.0f,  1.0f, 0.0f,
+		 1.0f,  1.0f,  1.0f, 1.0f
 	};
 
-	GLuint indicies[] = {
-		0, 1, 2,
-		1, 2, 3
-	};
 
 	GLFWwindow* window = glfwCreateWindow(width, height, "program", NULL, NULL);
 	if (window == NULL) {
@@ -59,7 +60,10 @@ int main() {
 
 	glfwMakeContextCurrent(window);
 	//glfwSwapInterval(0); // disable Vsync
+
+	// call backs
 	glfwSetCursorPosCallback(window, mouse_position_callback);
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 	// mouse mode
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -72,26 +76,30 @@ int main() {
 	glViewport(0, 0, width, height);
 
 
-	Shader shader("./src/shaders/Default.vert", "./src/shaders/Default.frag");
+	// create shaders
+	Shader rayShader("./src/shaders/Default.vert", "./src/shaders/Ray.frag");
+	Shader FBOShader("./src/shaders/Default.vert", "./src/shaders/FBO.frag");
+
 
 	VAO VAO;
-	VAO.bind();
-
 	VBO VBO(vertices, sizeof(vertices));
-	EBO EBO(indicies, sizeof(indicies));
 
+	VAO.bind();
 	VAO.linkVBO(VBO, 0);
+	VAO.linkVBO(VBO, 1);
+
+	FBO FBO(width, height);
+	FBOShader.use();
+	glUniform1i(glGetUniformLocation(FBOShader.program, "text"), 0);
+
+	UBO UBO;
 
 	VAO.unBind();
 	VBO.unBind();
-	EBO.unBind();
+	FBO.unBind();
+	UBO.unBind();
 
-	UBO UBO;
 	Uniforms uni;
-
-
-	// resize window
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
 
 	// materials
@@ -100,7 +108,7 @@ int main() {
 	materials[0].lightStrength = 0.8;
 	materials[0].lightColor = glm::vec3(0.5, 0.2, 0.8);
 
-	materials[1].color = glm::vec3(0.11, 0.804, 0.851);
+	materials[1].color = glm::vec3(0.1, 0.8, 0.85);
 	materials[1].lightStrength = 2;
 	materials[1].lightColor = glm::vec3(1);
 
@@ -157,6 +165,14 @@ int main() {
 		cam.updateDT(dt);
 		input(window, dt);
 
+		// FBO resize
+		if (resize) {
+			resize = false;
+			FBO.bind();
+			FBO.resize(width, height);
+			FBO.unBind();
+		}
+
 
 		// position debug
 		//std::cout << cam.pos.x << " " << cam.pos.y << " " << cam.pos.z << std::endl; //"			 dir " << cam.direction.x << " " << cam.direction.y << " " << cam.direction.z << std::endl;
@@ -165,33 +181,43 @@ int main() {
 		std::cout << int (1 / dt) << std::endl;
 
 
-		// render stuff
-		glClearColor(0.5f, 0.0f, 0.5f, 1.0f);
+		// pass 1
+		FBO.bind();
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		shader.use();
-
+		rayShader.use();
 
 		// uniforms
-		uni.init(shader.program);
+		uni.init(rayShader.program);
 		uni.update(cam.pos, cam.model, width, height, cam.focus, spheresLength);
-		UBO.build(shader.program, spheres, spheresLength);
-
+		UBO.bind();
+		UBO.build(rayShader.program, spheres, spheresLength);
 
 		VAO.bind();
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		glDrawElements(GL_TRIANGLES, sizeof(indicies) / sizeof(int), GL_UNSIGNED_INT, 0);
+
+		// pass 2
+		FBO.unBind();
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		FBOShader.use();
+
+		FBO.bindTexture();
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		glfwSwapBuffers(window);
-
 		glfwPollEvents();
 	}
 
 	VAO.deleteVAO();
 	VBO.deleteVBO();
-	EBO.deleteEBO();
+	FBO.deleteFBO();
 	UBO.deleteUBO();
-	shader.deleteShader();
+	rayShader.deleteShader();
+	FBOShader.deleteShader();
 
 	glfwDestroyWindow(window);
 	glfwTerminate();
@@ -205,6 +231,7 @@ void framebuffer_size_callback(GLFWwindow* window, int x, int y) {
 	cam.updateRes(x, y);
 	width = x;
 	height = y;
+	resize = true;
 }
 
 // mouse movement

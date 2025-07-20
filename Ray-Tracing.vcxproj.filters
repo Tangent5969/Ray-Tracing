@@ -21,9 +21,6 @@
     <ClCompile Include="src\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\EBO.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\glad.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -45,9 +42,15 @@
     <ClCompile Include="src\Uniforms.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\FBO.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\shaders\Default.frag">
+    <None Include="src\shaders\Ray.frag">
+      <Filter>Resource Files\Shader Files</Filter>
+    </None>
+    <None Include="src\shaders\FBO.frag">
       <Filter>Resource Files\Shader Files</Filter>
     </None>
     <None Include="src\shaders\Default.vert">
@@ -56,9 +59,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\headers\Camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\headers\EBO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\headers\Shader.h">
@@ -77,6 +77,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\headers\Uniforms.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\headers\FBO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

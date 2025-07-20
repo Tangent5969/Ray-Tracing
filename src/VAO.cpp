@@ -6,7 +6,7 @@ VAO::VAO() {
 
 void VAO::linkVBO(VBO VBO, GLuint layout) {
 	VBO.bind();
-	glVertexAttribPointer(layout, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(layout * 3 * sizeof(float)));
+	glVertexAttribPointer(layout, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(layout * 2 * sizeof(float)));
 	glEnableVertexAttribArray(layout);
 	VBO.unBind();
 }

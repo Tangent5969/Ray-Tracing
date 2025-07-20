@@ -14,6 +14,8 @@ public:
 
 	UBO();
 	void build(GLuint program, Sphere spheres[], int spheresLength);
+	void bind();
+	void unBind();
 	void deleteUBO();
 
 };
