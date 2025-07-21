@@ -14,7 +14,7 @@ public:
 	Camera(int width, int height, float fov);
 	void updateRes(int width, int height);
 	void updateFov(float fov);
-	void input(GLFWwindow* window);
+	bool input(GLFWwindow* window);
 	void mouseInput(float dx, float dy, bool mouse);
 	void updateDT(float dt);
 

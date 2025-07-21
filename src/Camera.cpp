@@ -27,36 +27,60 @@ void Camera::updateFov(float fov) {
 	focus = width / (2 * glm::tan(fov / 2));
 }
 
-void Camera::input(GLFWwindow* window) {
+bool Camera::input(GLFWwindow* window) {
 	float speed = 1.0f * dt;
+	bool moved = false;
 
 	// sprint
-	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
 		speed *= 3;
+	}
 
 	// movement
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		pos += speed * direction;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		moved = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
 		pos -= speed * direction;
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		moved = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
 		pos += speed * side;
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		moved = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
 		pos -= speed * side;
-	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+		moved = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
 		pos += speed * up;
-	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+		moved = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
 		pos -= speed * up;
+		moved = true;
+	}
 
 	// camera (low fps movement)
-	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
 		mouseInput(-1, 0, false);
-	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+		moved = true;
+		}
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
 		mouseInput(1, 0, false);
-	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+		moved = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
 		mouseInput(0, -1, false);
-	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+		moved = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
 		mouseInput(0, 1, false);
+		moved = true;
+	}
+
+	return moved;
 }
 
 void Camera::mouseInput(float dx, float dy, bool mouse) {

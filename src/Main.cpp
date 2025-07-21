@@ -22,6 +22,7 @@ int height = INITIAL_HEIGHT;
 float prevX = 0.0f;
 float prevY = 0.0f;
 bool resize = false;
+bool moved = false;
 Camera cam(width, height, 45.0f);
 
 
@@ -80,6 +81,10 @@ int main() {
 	Shader rayShader("./src/shaders/Default.vert", "./src/shaders/Ray.frag");
 	Shader FBOShader("./src/shaders/Default.vert", "./src/shaders/FBO.frag");
 
+	rayShader.use();
+	glUniform1i(glGetUniformLocation(rayShader.program, "text"), 0);
+	FBOShader.use();
+	glUniform1i(glGetUniformLocation(FBOShader.program, "text"), 0);
 
 	VAO VAO;
 	VBO VBO(vertices, sizeof(vertices));
@@ -89,17 +94,16 @@ int main() {
 	VAO.linkVBO(VBO, 1);
 
 	FBO FBO(width, height);
-	FBOShader.use();
-	glUniform1i(glGetUniformLocation(FBOShader.program, "text"), 0);
+	FBO.unBind();
 
 	UBO UBO;
 
 	VAO.unBind();
 	VBO.unBind();
-	FBO.unBind();
 	UBO.unBind();
 
 	Uniforms uni;
+	uni.init(rayShader.program);
 
 
 	// materials
@@ -151,9 +155,13 @@ int main() {
 	spheres[4].mat = materials[4];
 
 
-	// delta time setup
+	// initialize loop variables
 	float currentTime, dt;
 	float prevTime = glfwGetTime();
+	int accumulationFrame = 0;
+
+	FBO.bindTexture();
+
 
 	// main loop
 	while (!glfwWindowShouldClose(window)) {
@@ -165,32 +173,39 @@ int main() {
 		cam.updateDT(dt);
 		input(window, dt);
 
-		// FBO resize
 		if (resize) {
 			resize = false;
+
 			FBO.bind();
 			FBO.resize(width, height);
 			FBO.unBind();
+			FBO.bindTexture();
+
+			accumulationFrame = 1;
+		}
+
+		if (moved) {
+			moved = false;
+			accumulationFrame = 1;
+		}
+		else {
+			accumulationFrame++;
 		}
 
 
 		// position debug
 		//std::cout << cam.pos.x << " " << cam.pos.y << " " << cam.pos.z << std::endl; //"			 dir " << cam.direction.x << " " << cam.direction.y << " " << cam.direction.z << std::endl;
 		
-		// fps
+		// fps debug
 		std::cout << int (1 / dt) << std::endl;
 
 
-		// pass 1
+		// pass 1, render scene to FBO
 		FBO.bind();
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
 		rayShader.use();
 
 		// uniforms
-		uni.init(rayShader.program);
-		uni.update(cam.pos, cam.model, width, height, cam.focus, spheresLength);
+		uni.update(cam.pos, cam.model, width, height, cam.focus, spheresLength, accumulationFrame);
 		UBO.bind();
 		UBO.build(rayShader.program, spheres, spheresLength);
 
@@ -198,14 +213,13 @@ int main() {
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 
-		// pass 2
+		// pass 2, render FBO texture to screen
 		FBO.unBind();
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		FBOShader.use();
 
-		FBO.bindTexture();
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		glfwSwapBuffers(window);
@@ -245,12 +259,14 @@ void mouse_position_callback(GLFWwindow* window, double xPos, double yPos) {
 	prevY = y;
 
 	cam.mouseInput(dx, dy, true);
+	moved = true;
 }
 
 // keyboard
 void input(GLFWwindow* window, float dt) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) 
 		glfwSetWindowShouldClose(window, true);
-	cam.input(window);
+	if (cam.input(window))
+		moved = true;
 }
 

@@ -6,7 +6,7 @@
 class FBO {
 public:
 	GLuint ID;
-	GLuint textID;
+	GLuint texture;
 	GLuint RBO;
 
 	FBO(int width, int height);

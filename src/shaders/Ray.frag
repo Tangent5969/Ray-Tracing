@@ -1,9 +1,10 @@
 #version 420 core
 #define maxSpheres 100
 #define maxMaterials 100
-#define maxRays 3
-#define maxBounces 10
+#define maxRays 1
+#define maxBounces 25
 
+in vec2 texCoords;
 out vec4 FragColor;
 
 uniform vec3 camPos;
@@ -11,7 +12,8 @@ uniform mat4 model;
 uniform vec2 res;
 uniform float focus;
 uniform int spheresLength;
-
+uniform sampler2D text;
+uniform int accumulationFrame;
 
 struct Ray {
 	vec3 origin;
@@ -57,8 +59,8 @@ float random(inout uint seed) {
 // equal distribution across sphere
 // https://dspguide.com/ch2/6.html
 float randomNormalDist(inout uint seed) {
-    float angle = 2 * 3.1415926 * random(seed);
-    float value = sqrt(-2 * log(random(seed)));
+    float angle = 2.0f * 3.1415926f * random(seed);
+    float value = sqrt(-2.0f * log(random(seed)));
     return value * cos(angle);
 }
 
@@ -74,7 +76,7 @@ hitData intersect(Ray ray, Sphere sphere) {
 	float d = b * b - c;
 	float dist1, dist2;
 
-	if (d >= 0) {
+	if (d >= 0.0f) {
 		dist1 = b + sqrt(d);
 		dist2 = b - sqrt(d);
 		if (dist1 > dist2) {
@@ -83,10 +85,10 @@ hitData intersect(Ray ray, Sphere sphere) {
 			dist1 = dist2;
 			dist2 = temp;
 		}
-		if (dist1 < 0) {
+		if (dist1 < 0.0f) {
 			dist1 = dist2;
 			// missed
-			if (dist1 < 0) return hit;
+			if (dist1 < 0.0f) return hit;
 		}
 		// hit
 		hit.dist = dist1;
@@ -100,7 +102,7 @@ hitData intersect(Ray ray, Sphere sphere) {
 
 hitData getCollision(Ray ray) {
 	hitData result;
-	result.dist = 9999;
+	result.dist = 9999.0f;
 
 	for (int i = 0; i < spheresLength; i++) {
 		hitData hit = intersect(ray, spheres[i]);
@@ -116,7 +118,7 @@ hitData getCollision(Ray ray) {
 
 
 vec3 randBounce(vec3 normal, inout uint seed) {
-	vec3 bounce = vec3(1);
+	vec3 bounce = vec3(1.0f);
 	bounce.x = randomNormalDist(seed);
 	bounce.y = randomNormalDist(seed);
 	bounce.z = randomNormalDist(seed);
@@ -129,14 +131,14 @@ vec3 randBounce(vec3 normal, inout uint seed) {
 Ray reflectRay(vec3 hit, vec3 dir, vec3 normal) {
 	Ray ray;
 	ray.origin = hit;
-	ray.dir = normalize(dir - 2 * dot(normal, dir) * normal);
+	ray.dir = normalize(dir - 2.0f * dot(normal, dir) * normal);
 	return ray;
 };
 
 
 vec3 trace(Ray ray, inout uint seed) {
-	vec3 color = vec3(1.0);
-	vec3 light = vec3(0.0);
+	vec3 color = vec3(1.0f);
+	vec3 light = vec3(0.0f);
 	hitData hit;
 
 	for (int i = 0; i <= maxBounces; i++) {
@@ -150,7 +152,6 @@ vec3 trace(Ray ray, inout uint seed) {
 			vec3 emmited = mat.lightColor * mat.lightStrength;
 			light += emmited * color;
 			color *= mat.color;
-	
 		}
 		else break;
 	}
@@ -159,15 +160,15 @@ vec3 trace(Ray ray, inout uint seed) {
 	
 
 void main() {
-	uint seed = uint((gl_FragCoord.y * res.x) + gl_FragCoord.x);
+	uint seed = uint((gl_FragCoord.y * res.x) + gl_FragCoord.x) + accumulationFrame * 20983476;
 
-	float x = -res.x / 2 + gl_FragCoord.x;
-	float y = -res.y / 2 + gl_FragCoord.y;
+	float x = -res.x / 2.0f + gl_FragCoord.x;
+	float y = -res.y / 2.0f + gl_FragCoord.y;
 	
 	Ray ray;
 	ray.origin = camPos;
 	ray.dir = normalize(vec3(x, y, focus));
-	ray.dir = (model * vec4(ray.dir, 1.0)).xyz;
+	ray.dir = (model * vec4(ray.dir, 1.0f)).xyz;
 	
 	vec3 totalLight = vec3(0);
 
@@ -175,10 +176,13 @@ void main() {
 		totalLight += trace(ray, seed);
 	}
 	totalLight /= maxRays;
-
 	
-	FragColor = vec4(totalLight, 1.0);
+	// pixel accumulation from previous frames
+	float weight = 1.0f / accumulationFrame;
+	totalLight = (1.0f - weight) * texture(text, texCoords).xyz + totalLight * weight;
+	
+	// final output color
+	FragColor = vec4(totalLight, 1.0f);
 
-	//FragColor = vec4(ray.dir, 1.0);
-		
+	//FragColor = vec4(ray.dir, 1.0);	
 };

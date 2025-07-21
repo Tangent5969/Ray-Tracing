@@ -7,13 +7,13 @@ FBO::FBO(int width, int height) {
 }
 
 void FBO::resize(int width, int height) {
-	glGenTextures(1, &textID);
-	glBindTexture(GL_TEXTURE_2D, textID);
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glBindTexture(GL_TEXTURE_2D, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textID, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
 
 	glGenRenderbuffers(1, &RBO);
 	glBindRenderbuffer(GL_RENDERBUFFER, RBO);
@@ -31,7 +31,7 @@ void FBO::unBind() {
 }
 
 void FBO::bindTexture() {
-	glBindTexture(GL_TEXTURE_2D, textID);
+	glBindTexture(GL_TEXTURE_2D, texture);
 }
 
 void FBO::unBindTexture() {
@@ -39,6 +39,6 @@ void FBO::unBindTexture() {
 }
 
 void FBO::deleteFBO() {
-	glDeleteTextures(1, &textID);
+	glDeleteTextures(1, &texture);
 	glDeleteFramebuffers(1, &ID);
 }
