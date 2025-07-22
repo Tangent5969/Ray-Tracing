@@ -1,8 +1,11 @@
 #version 420 core
+
+#define pi 3.1415926f
+
 #define maxSpheres 100
 #define maxMaterials 100
 #define maxRays 1
-#define maxBounces 25
+#define maxBounces 50
 
 in vec2 texCoords;
 out vec4 FragColor;
@@ -59,7 +62,7 @@ float random(inout uint seed) {
 // equal distribution across sphere
 // https://dspguide.com/ch2/6.html
 float randomNormalDist(inout uint seed) {
-    float angle = 2.0f * 3.1415926f * random(seed);
+    float angle = 2.0f * pi * random(seed);
     float value = sqrt(-2.0f * log(random(seed)));
     return value * cos(angle);
 }
@@ -97,6 +100,7 @@ hitData intersect(Ray ray, Sphere sphere) {
 
 hitData getCollision(Ray ray) {
 	hitData result;
+	result.didHit = false;
 	result.dist = 9999.0f;
 
 	for (int i = 0; i < spheresLength; i++) {
@@ -131,6 +135,11 @@ Ray reflectRay(vec3 hit, vec3 dir, vec3 normal) {
 };
 
 
+vec3 environmentLight(Ray ray) {
+	return vec3(0.4, 0.5, 0.9) * (ray.dir.y + 0.95);
+}
+
+
 vec3 trace(Ray ray, inout uint seed) {
 	vec3 color = vec3(1.0f);
 	vec3 light = vec3(0.0f);
@@ -147,7 +156,10 @@ vec3 trace(Ray ray, inout uint seed) {
 			ray.origin = hit.pos;
 			ray.dir = normalize(hit.normal + randBounce(hit.normal, seed));
 		}
-		else break;
+		else {
+			light += environmentLight(ray) * color;
+			break;
+		}
 	}
 	return light;
 };

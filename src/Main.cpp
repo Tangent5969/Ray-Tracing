@@ -137,11 +137,11 @@ int main() {
 	spheres[0].radius = 0.6;
 	spheres[0].mat = materials[0];
 
-	spheres[1].pos = glm::vec3(-3, 3, 1);
+	spheres[1].pos = glm::vec3(-3, -1.1, 1);
 	spheres[1].radius = 0.4;
 	spheres[1].mat = materials[1];
 
-	spheres[2].pos = glm::vec3(-2, 1.2, 0);
+	spheres[2].pos = glm::vec3(2, -1, 0);
 	spheres[2].radius = 0.8;
 	spheres[2].mat = materials[2];
 
