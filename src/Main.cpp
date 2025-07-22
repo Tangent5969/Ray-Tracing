@@ -23,7 +23,7 @@ float prevX = 0.0f;
 float prevY = 0.0f;
 bool resize = false;
 bool moved = false;
-Camera cam(width, height, 45.0f);
+Camera cam(width, height, 65.0f);
 
 
 // declare functions before use
@@ -269,4 +269,3 @@ void input(GLFWwindow* window, float dt) {
 	if (cam.input(window))
 		moved = true;
 }
-

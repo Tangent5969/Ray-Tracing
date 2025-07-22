@@ -74,26 +74,21 @@ hitData intersect(Ray ray, Sphere sphere) {
 	float b = dot(ray.dir, a);
 	float c = dot(a, a) - sphere.radius * sphere.radius;
 	float d = b * b - c;
-	float dist1, dist2;
 
+	// any real roots
 	if (d >= 0.0f) {
-		dist1 = b + sqrt(d);
-		dist2 = b - sqrt(d);
-		if (dist1 > dist2) {
-			// swap (smallest value in dist1)
-			float temp = dist1;
-			dist1 = dist2;
-			dist2 = temp;
-		}
-		if (dist1 < 0.0f) {
-			dist1 = dist2;
+		float dist = b - sqrt(d);
+		// 0.001 sets clip distance and fixes banding
+		if (dist < 0.001f) { 
+			dist = b + sqrt(d);
 			// missed
-			if (dist1 < 0.0f) return hit;
+			if (dist < 0.001f) return hit;
 		}
+
 		// hit
-		hit.dist = dist1;
+		hit.dist = dist;
 		hit.didHit = true;
-		hit.pos = ray.origin + (ray.dir * dist1);
+		hit.pos = ray.origin + (ray.dir * dist);
 		hit.normal = normalize(hit.pos - sphere.pos);
 	}
 	return hit;
@@ -144,14 +139,13 @@ vec3 trace(Ray ray, inout uint seed) {
 	for (int i = 0; i <= maxBounces; i++) {
 		hit = getCollision(ray);
 		if (hit.didHit) {
-			ray.origin = hit.pos;
-			ray.dir = normalize(hit.normal + randBounce(hit.normal, seed));
-			//ray = reflectRay(hit.pos, ray.dir, hit.normal);
-
 			Material mat = hit.mat;
 			vec3 emmited = mat.lightColor * mat.lightStrength;
 			light += emmited * color;
 			color *= mat.color;
+
+			ray.origin = hit.pos;
+			ray.dir = normalize(hit.normal + randBounce(hit.normal, seed));
 		}
 		else break;
 	}
@@ -160,8 +154,7 @@ vec3 trace(Ray ray, inout uint seed) {
 	
 
 void main() {
-	uint seed = uint((gl_FragCoord.y * res.x) + gl_FragCoord.x) + accumulationFrame * 20983476;
-
+	uint seed = uint((gl_FragCoord.y * res.x) + gl_FragCoord.x) + accumulationFrame * 20983476; // large arbitrary  number 
 	float x = -res.x / 2.0f + gl_FragCoord.x;
 	float y = -res.y / 2.0f + gl_FragCoord.y;
 	
@@ -183,6 +176,4 @@ void main() {
 	
 	// final output color
 	FragColor = vec4(totalLight, 1.0f);
-
-	//FragColor = vec4(ray.dir, 1.0);	
 };

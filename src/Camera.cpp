@@ -7,19 +7,18 @@ Camera::Camera(int width, int height, float fov) {
 	this->width = width;
 	this->height = height;
 
-	focus = width / (2 * glm::tan(fov / 2));
+	focus = width / (2 * glm::tan(glm::radians(fov) / 2));
 	pos = glm::vec3(0, 0, -1);
 	direction = originalDirection;
 	up = originalUp;
 	side = originalSide;
 	model = glm::mat4(1);
-
 }
 
 void Camera::updateRes(int width, int height) {
 	this->width = width;
 	this->height = height;
-	focus = width / (2 * glm::tan(fov / 2));
+	focus = width / (2 * glm::tan(glm::radians(fov) / 2));
 }
 
 void Camera::updateFov(float fov) {
