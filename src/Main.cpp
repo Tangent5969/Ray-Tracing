@@ -107,27 +107,37 @@ int main() {
 
 
 	// materials
-	Material materials[5];
+	Material materials[6];
 	materials[0].color = glm::vec3(0.5, 0.2, 0.8);
-	materials[0].lightStrength = 0.8;
+	materials[0].lightStrength = 1;
 	materials[0].lightColor = glm::vec3(0.5, 0.2, 0.8);
+	materials[0].smoothness = 0;
 
 	materials[1].color = glm::vec3(0.1, 0.8, 0.85);
-	materials[1].lightStrength = 2;
-	materials[1].lightColor = glm::vec3(1);
+	materials[1].lightStrength = 0;
+	materials[1].lightColor = glm::vec3(0);
+	materials[1].smoothness = 0.2;
 
 	materials[2].color = glm::vec3(0.5, 0.7, 0.2);
 	materials[2].lightStrength = 0;
 	materials[2].lightColor = glm::vec3(0);
+	materials[2].smoothness = 0.95;
+	materials[2].gloss = 0.6;
 
 	materials[3].color = glm::vec3(0.8, 0.25, 0.25);
 	materials[3].lightStrength = 0;
 	materials[3].lightColor = glm::vec3(0);
+	materials[3].smoothness = 0;
 
 	// star
-	materials[4].color = glm::vec3(0);
-	materials[4].lightStrength = 10;
+	materials[4].color = glm::vec3(1, 0.9, 1);
+	materials[4].lightStrength = 50;
 	materials[4].lightColor = glm::vec3(1, 0.9, 1);
+	materials[4].smoothness = 0;
+
+	materials[5].smoothness = 0.8;
+	materials[5].gloss = 1;
+
 
 
 	// sphere objects
@@ -137,9 +147,9 @@ int main() {
 	spheres[0].radius = 0.6;
 	spheres[0].mat = materials[0];
 
-	spheres[1].pos = glm::vec3(-3, -1.1, 1);
-	spheres[1].radius = 0.4;
-	spheres[1].mat = materials[1];
+	spheres[1].pos = glm::vec3(10, -1.1, 20);
+	spheres[1].radius = 5;
+	spheres[1].mat = materials[5];
 
 	spheres[2].pos = glm::vec3(2, -1, 0);
 	spheres[2].radius = 0.8;
@@ -150,7 +160,7 @@ int main() {
 	spheres[3].mat = materials[3];
 
 	// star
-	spheres[4].pos = glm::vec3(300, 400, -180);
+	spheres[4].pos = glm::vec3(350, 100, -200);
 	spheres[4].radius = 50;
 	spheres[4].mat = materials[4];
 

@@ -4,7 +4,7 @@
 
 #define maxSpheres 100
 #define maxMaterials 100
-#define maxRays 1
+#define maxRays 5
 #define maxBounces 50
 
 in vec2 texCoords;
@@ -27,13 +27,17 @@ struct Material {
 	vec3 color; // 12 
 	float lightStrength; //4
 	vec3 lightColor; // 12
-	float pad; // 4
+	float smoothness; // 4
+	float gloss; // 4
+	float pad1; // 4
+	float pad2; // 4
+	float pad3; // 4
 };
 
 struct Sphere {
 	vec3 pos; // 12
 	float radius; // 4
-	Material mat; // 48
+	Material mat; // 64
 };
 
 struct hitData {
@@ -127,11 +131,8 @@ vec3 randBounce(vec3 normal, inout uint seed) {
 };
 
 
-Ray reflectRay(vec3 hit, vec3 dir, vec3 normal) {
-	Ray ray;
-	ray.origin = hit;
-	ray.dir = normalize(dir - 2.0f * dot(normal, dir) * normal);
-	return ray;
+vec3 reflectRay(vec3 dir, vec3 normal) {
+	return normalize(dir - 2.0f * dot(normal, dir) * normal);
 };
 
 
@@ -149,12 +150,18 @@ vec3 trace(Ray ray, inout uint seed) {
 		hit = getCollision(ray);
 		if (hit.didHit) {
 			Material mat = hit.mat;
-			vec3 emmited = mat.lightColor * mat.lightStrength;
-			light += emmited * color;
-			color *= mat.color;
 
 			ray.origin = hit.pos;
-			ray.dir = normalize(hit.normal + randBounce(hit.normal, seed));
+			vec3 diffuseDir = randBounce(hit.normal, seed);
+			// chance of diffuse or specular reflection
+			if (random(seed) >= mat.gloss) ray.dir = diffuseDir;
+			// specular reflection / blur
+			else ray.dir = mat.smoothness * reflectRay(ray.dir, hit.normal) + (1 - mat.smoothness) * diffuseDir;
+
+			vec3 emmited = mat.lightColor * mat.lightStrength;
+			light += emmited * color;
+			color *= mat.color * dot(hit.normal, ray.dir);
+			
 		}
 		else {
 			light += environmentLight(ray) * color;
@@ -181,7 +188,7 @@ void main() {
 		totalLight += trace(ray, seed);
 	}
 	totalLight /= maxRays;
-	
+
 	// pixel accumulation from previous frames
 	float weight = 1.0f / accumulationFrame;
 	totalLight = (1.0f - weight) * texture(text, texCoords).xyz + totalLight * weight;
