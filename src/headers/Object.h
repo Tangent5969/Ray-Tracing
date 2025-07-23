@@ -11,9 +11,9 @@ struct Material {
 	glm::vec3 lightColor = glm::vec3(0); // 12
 	float smoothness = 0.0f; // 4
 	float gloss = 0.0f; // 4
-	float pad1; // 4
-	float pad2; // 4
-	float pad3; // 4
+	float glass = false; // 4
+	float refraction = 1.0f; // 4
+	float pad; // 4
 
 };
 

@@ -4,8 +4,8 @@
 
 #define maxSpheres 100
 #define maxMaterials 100
-#define maxRays 5
-#define maxBounces 50
+#define maxRays 3
+#define maxBounces 75
 
 in vec2 texCoords;
 out vec4 FragColor;
@@ -29,9 +29,9 @@ struct Material {
 	vec3 lightColor; // 12
 	float smoothness; // 4
 	float gloss; // 4
-	float pad1; // 4
-	float pad2; // 4
-	float pad3; // 4
+	bool glass; // 4
+	float refraction; // 4
+	float pad; // 4
 };
 
 struct Sphere {
@@ -42,6 +42,7 @@ struct Sphere {
 
 struct hitData {
 	bool didHit;
+	bool inside;
 	float dist;
 	vec3 pos;
 	vec3 normal;
@@ -97,6 +98,15 @@ hitData intersect(Ray ray, Sphere sphere) {
 		hit.didHit = true;
 		hit.pos = ray.origin + (ray.dir * dist);
 		hit.normal = normalize(hit.pos - sphere.pos);
+
+		// inside or outside sphere
+		if (dot(ray.dir, hit.normal) > 0.0f) {
+			hit.normal = -hit.normal;
+			hit.inside = true;
+		} else {
+			hit.inside = false;
+		}
+
 	}
 	return hit;
 };
@@ -141,6 +151,24 @@ vec3 environmentLight(Ray ray) {
 }
 
 
+// snells law, gives refracted angle
+vec3 snells(vec3 dir, vec3 normal, float index, float cosine) {
+	float value = 1 - index * index * (1 - cosine * cosine);
+	// reflect
+	if (value < 0.0f) return vec3(0);
+	// refract
+	return index * dir - (index * cosine - sqrt(value)) * normal;
+}
+
+
+// Schlicks approximation
+float fresnel(float index, float cosine) {
+        float r0 = (1 - index) / (1 + index);
+        r0 = r0 * r0;
+        return r0 + (1 - r0) * pow(1 - cosine, 5);
+}
+
+
 vec3 trace(Ray ray, inout uint seed) {
 	vec3 color = vec3(1.0f);
 	vec3 light = vec3(0.0f);
@@ -152,12 +180,28 @@ vec3 trace(Ray ray, inout uint seed) {
 			Material mat = hit.mat;
 
 			ray.origin = hit.pos;
-			vec3 diffuseDir = randBounce(hit.normal, seed);
-			// chance of diffuse or specular reflection
-			if (random(seed) >= mat.gloss) ray.dir = diffuseDir;
-			// specular reflection / blur
-			else ray.dir = mat.smoothness * reflectRay(ray.dir, hit.normal) + (1 - mat.smoothness) * diffuseDir;
 
+			// transparent
+			if (mat.glass) {
+				float index = hit.inside ? 1.0f / mat.refraction : mat.refraction;
+				float cosine = dot(-ray.dir, hit.normal);
+				vec3 refractDir = snells(ray.dir, hit.normal, index, cosine);
+				if (refractDir == 0 || fresnel(index, cosine) > random(seed)) ray.dir = reflectRay(ray.dir, hit.normal);
+				else ray.dir = refractDir;
+				// blur
+				ray.dir += (1 - mat.smoothness) * randBounce(hit.normal, seed);
+			}
+
+			// matt and reflective
+			else {
+				vec3 diffuseDir = randBounce(hit.normal, seed);
+				// chance of diffuse or specular reflection
+				if (random(seed) >= mat.gloss) ray.dir = diffuseDir;
+				// specular reflection / blur
+				else ray.dir = mat.smoothness * reflectRay(ray.dir, hit.normal) + (1 - mat.smoothness) * diffuseDir;
+			}
+
+			// light
 			vec3 emmited = mat.lightColor * mat.lightStrength;
 			light += emmited * color;
 			color *= mat.color * dot(hit.normal, ray.dir);

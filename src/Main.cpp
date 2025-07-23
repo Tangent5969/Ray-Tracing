@@ -107,7 +107,7 @@ int main() {
 
 
 	// materials
-	Material materials[6];
+	Material materials[7];
 	materials[0].color = glm::vec3(0.5, 0.2, 0.8);
 	materials[0].lightStrength = 1;
 	materials[0].lightColor = glm::vec3(0.5, 0.2, 0.8);
@@ -138,10 +138,12 @@ int main() {
 	materials[5].smoothness = 0.8;
 	materials[5].gloss = 1;
 
-
+	materials[6].glass = true;
+	materials[6].smoothness =0.9995f;
+	materials[6].refraction = 1.01f;
 
 	// sphere objects
-	const int spheresLength = 5;
+	const int spheresLength = 6;
 	Sphere spheres[spheresLength];
 	spheres[0].pos = glm::vec3(0, 0, 3);
 	spheres[0].radius = 0.6;
@@ -163,6 +165,9 @@ int main() {
 	spheres[4].pos = glm::vec3(350, 100, -200);
 	spheres[4].radius = 50;
 	spheres[4].mat = materials[4];
+
+	spheres[5].pos = glm::vec3(-1, -0.4, 0);
+	spheres[5].mat = materials[6];
 
 
 	// initialize loop variables
