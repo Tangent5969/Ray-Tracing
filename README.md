@@ -1,10 +1,11 @@
 # Ray Tracing
 
-Simple ray tracing rendering using C++ and OpenGL.
+Simple ray traced rendering using C++ and OpenGL.
 
 Work in progress.
 
-Heavily inspired by [Sebastian Lague](https://youtu.be/Qz0KTGYJtUk).
+Inspired by [Sebastian Lague](https://youtu.be/Qz0KTGYJtUk) and 
+[Ray Tracing In One Weekend](https://raytracing.github.io/).
 
 ## Controls
  
@@ -16,4 +17,4 @@ Heavily inspired by [Sebastian Lague](https://youtu.be/Qz0KTGYJtUk).
 * Control - Down
 * Shift - Sprint
 * Mouse & Arrows - Pan Camera
-* Escape - Exit Program 
+* Escape - Exit Program
