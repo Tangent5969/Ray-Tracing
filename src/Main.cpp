@@ -1,10 +1,13 @@
 #include<iostream>
+
+// opengl headers
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
 
+#include "headers/GUI.h"
 #include "headers/Shader.h"
 #include "headers/VAO.h"
 #include "headers/VBO.h"
@@ -177,9 +180,15 @@ int main() {
 
 	FBO.bindTexture();
 
+	// imgui
+    GUI gui;  
+    gui.init(window);
+
 
 	// main loop
 	while (!glfwWindowShouldClose(window)) {
+		// imgui
+		gui.mainLoop();
 
 		// input first
 		currentTime = glfwGetTime();
@@ -237,6 +246,9 @@ int main() {
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
+		// imgui
+		gui.render();
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -247,6 +259,9 @@ int main() {
 	UBO.deleteUBO();
 	rayShader.deleteShader();
 	FBOShader.deleteShader();
+
+	// imgui
+	gui.deleteGUI();
 
 	glfwDestroyWindow(window);
 	glfwTerminate();
