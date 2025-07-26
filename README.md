@@ -17,4 +17,5 @@ Inspired by [Sebastian Lague](https://youtu.be/Qz0KTGYJtUk) and
 * Control - Down
 * Shift - Sprint
 * Mouse & Arrows - Pan Camera
+* Tab - Toggle Movement
 * Escape - Exit Program
