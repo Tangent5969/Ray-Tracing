@@ -18,15 +18,20 @@
 #include "headers/FBO.h"
 
 // globals
-const int INITIAL_WIDTH = 1280;
-const int INITIAL_HEIGHT = 720;
-int width = INITIAL_WIDTH;
-int height = INITIAL_HEIGHT;
+int windowWidth = 1408;
+int windowHeight = 792;
+int width = 1280;
+int height = 720;
+int oldWidth = width;
+int oldHeight = height;
 float prevX = 0.0f;
 float prevY = 0.0f;
-bool resize = false;
 bool moved = false;
+bool lockedMovement = false;
 Camera cam(width, height, 65.0f);
+
+// detects for tab key just pressed
+bool tabHeld = false;
 
 
 // declare functions before use
@@ -55,7 +60,7 @@ int main() {
 	};
 
 
-	GLFWwindow* window = glfwCreateWindow(width, height, "program", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "program", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
@@ -181,15 +186,11 @@ int main() {
 	FBO.bindTexture();
 
 	// imgui
-    GUI gui;  
-    gui.init(window);
+    GUI gui(window);
 
 
 	// main loop
 	while (!glfwWindowShouldClose(window)) {
-		// imgui
-		gui.mainLoop();
-
 		// input first
 		currentTime = glfwGetTime();
 		dt = currentTime - prevTime;
@@ -197,13 +198,20 @@ int main() {
 		cam.updateDT(dt);
 		input(window, dt);
 
-		if (resize) {
-			resize = false;
 
+		if (width != oldWidth || height != oldHeight) {
+			oldWidth = width;
+			oldHeight = height;
+			cam.updateRes(width, height);
+
+			// resize FBO and texture
 			FBO.bind();
 			FBO.resize(width, height);
 			FBO.unBind();
 			FBO.bindTexture();
+
+			// resize viewport
+			glViewport(0, 0, width, height);
 
 			accumulationFrame = 1;
 		}
@@ -223,8 +231,11 @@ int main() {
 		// fps debug
 		std::cout << int (1 / dt) << std::endl;
 
+		// viewport size debug
+		//std::cout << width << " h " << height << std::endl;
 
-		// pass 1, render scene to FBO
+
+		// render scene to FBO
 		FBO.bind();
 		rayShader.use();
 
@@ -236,15 +247,12 @@ int main() {
 		VAO.bind();
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
+		// gui logic and image
+		gui.mainLoop(FBO.texture, width, height);
 
-		// pass 2, render FBO texture to screen
 		FBO.unBind();
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-
-		FBOShader.use();
-
-		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		// imgui
 		gui.render();
@@ -271,11 +279,8 @@ int main() {
 
 // resize window
 void framebuffer_size_callback(GLFWwindow* window, int x, int y) {
-	glViewport(0, 0, x, y);
-	cam.updateRes(x, y);
-	width = x;
-	height = y;
-	resize = true;
+	windowWidth = x;
+	windowHeight = y;
 }
 
 // mouse movement
@@ -288,14 +293,29 @@ void mouse_position_callback(GLFWwindow* window, double xPos, double yPos) {
 	prevX = x;
 	prevY = y;
 
-	cam.mouseInput(dx, dy, true);
-	moved = true;
+	if (!lockedMovement) {
+		cam.mouseInput(dx, dy, true);
+		moved = true;
+	}
 }
 
 // keyboard
 void input(GLFWwindow* window, float dt) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) 
 		glfwSetWindowShouldClose(window, true);
-	if (cam.input(window))
+
+	// emable or disable movement
+	if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS) {
+		if (!tabHeld) {
+			lockedMovement = !lockedMovement;
+			if (lockedMovement) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
+		tabHeld = true;
+	} 
+	if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE) tabHeld = false;
+
+	if (!lockedMovement && cam.input(window)) {
 		moved = true;
+	}
 }
