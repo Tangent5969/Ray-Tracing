@@ -248,7 +248,7 @@ int main() {
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		// gui logic and image
-		gui.mainLoop(FBO.texture, width, height);
+		gui.mainLoop(FBO.texture, width, height, lockedMovement, cam, dt);
 
 		FBO.unBind();
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
