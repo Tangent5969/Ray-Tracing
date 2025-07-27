@@ -13,7 +13,7 @@ GUI::GUI(GLFWwindow* window) {
 }
 
 
-void GUI::mainLoop(GLuint texture, int& width, int& height, bool lockedMovement, Camera& cam, float dt) {
+void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& changed, Camera& cam, float dt) {
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	NewFrame();
@@ -38,14 +38,14 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool lockedMovement,
 	PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	SetNextWindowSize(windowSize);
 	SetNextWindowPos(ImVec2(0, menuHeight));
-	Begin("dock", NULL, ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-	ImGuiID dockID = GetID("dock");
+	Begin("Dock", NULL, ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+	ImGuiID dockID = GetID("Dock");
 	DockSpace(dockID, ImVec2(0.0f, 0.0f));
 
 	End();
 
 	// shader output
-	if (Begin("view", NULL, windowFlags)) {
+	if (Begin("View", NULL, windowFlags)) {
 		ImVec2 viewSize = GetContentRegionAvail();
 		width = viewSize[0];
 		height = viewSize[1];
@@ -56,11 +56,43 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool lockedMovement,
 	// camera controls
 	if (cameraFlag) {
 		if (Begin("Camera", &cameraFlag, windowFlags)) {
-			// fov
-			// pos
-			// look direction
-			// speed
-			// sensitivity
+
+			ImGui::SeparatorText("Camera Position");
+			if (DragFloat("Pos X", &cam.pos.x, 0.05)) {
+				changed = true;
+			}
+			if (DragFloat("Pos Y", &cam.pos.y, 0.05)) {
+				changed = true;
+			}
+			if (DragFloat("Pos Z", &cam.pos.z, 0.05)) {
+				changed = true;
+			}
+
+			ImGui::SeparatorText("Camera Direction");
+			if (SliderFloat("Pitch", &cam.rotation.y, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+				cam.updateModel();
+				changed = true;
+			}
+			if (SliderFloat("Yaw", &cam.rotation.x, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+				cam.updateModel();
+				changed = true;
+			}
+			if (SliderFloat("Roll", &cam.rotation.z, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+				cam.updateModel();
+				changed = true;
+			}
+
+			ImGui::SeparatorText("Other");
+			if (SliderFloat("Fov", &cam.fov, 1, 180, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
+				cam.updateFov();
+				changed = true;
+			}
+			if (DragFloat("Speed", &cam.moveSpeed, 0.05, 0.1, ImGuiSliderFlags_AlwaysClamp)) {
+				if (cam.moveSpeed < 0.1f) cam.moveSpeed = 0.1f;
+			}
+			if (DragFloat("Sensitivity", &cam.sensitivity, 0.05, 0.1, ImGuiSliderFlags_AlwaysClamp)) {
+				if (cam.sensitivity < 0.1f) cam.sensitivity = 0.1f;
+			}
 		}
 		End();
 	}

@@ -13,7 +13,7 @@ using namespace ImGui;
 class GUI {
 public:
 	GUI(GLFWwindow* window);
-	void mainLoop(GLuint texture, int& width, int& height, bool lockedMovement, Camera& cam, float dt);
+	void mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& changed, Camera& cam, float dt);
 	void render();
 	void deleteGUI();
 

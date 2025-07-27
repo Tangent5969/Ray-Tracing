@@ -26,7 +26,7 @@ int oldWidth = width;
 int oldHeight = height;
 float prevX = 0.0f;
 float prevY = 0.0f;
-bool moved = false;
+bool changed = false;
 bool lockedMovement = false;
 Camera cam(width, height, 65.0f);
 
@@ -213,11 +213,11 @@ int main() {
 			// resize viewport
 			glViewport(0, 0, width, height);
 
-			accumulationFrame = 1;
+			changed = true;
 		}
 
-		if (moved) {
-			moved = false;
+		if (changed) {
+			changed = false;
 			accumulationFrame = 1;
 		}
 		else {
@@ -229,7 +229,7 @@ int main() {
 		//std::cout << cam.pos.x << " " << cam.pos.y << " " << cam.pos.z << std::endl; //"			 dir " << cam.direction.x << " " << cam.direction.y << " " << cam.direction.z << std::endl;
 		
 		// fps debug
-		std::cout << int (1 / dt) << std::endl;
+		//std::cout << int (1 / dt) << std::endl;
 
 		// viewport size debug
 		//std::cout << width << " h " << height << std::endl;
@@ -248,7 +248,7 @@ int main() {
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		// gui logic and image
-		gui.mainLoop(FBO.texture, width, height, lockedMovement, cam, dt);
+		gui.mainLoop(FBO.texture, width, height, lockedMovement, changed, cam, dt);
 
 		FBO.unBind();
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -295,7 +295,7 @@ void mouse_position_callback(GLFWwindow* window, double xPos, double yPos) {
 
 	if (!lockedMovement) {
 		cam.mouseInput(dx, dy, true);
-		moved = true;
+		changed = true;
 	}
 }
 
@@ -316,6 +316,6 @@ void input(GLFWwindow* window, float dt) {
 	if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE) tabHeld = false;
 
 	if (!lockedMovement && cam.input(window)) {
-		moved = true;
+		changed = true;
 	}
 }

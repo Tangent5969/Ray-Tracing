@@ -2,6 +2,7 @@
 
 Camera::Camera(int width, int height, float fov) {
 	this->sensitivity = 5.0f;
+	this->moveSpeed = 1.0f;
 	this->dt = 0;
 	this->fov = fov;
 	this->width = width;
@@ -9,6 +10,7 @@ Camera::Camera(int width, int height, float fov) {
 
 	focus = width / (2 * glm::tan(glm::radians(fov) / 2));
 	pos = glm::vec3(0, 0, -1);
+	rotation = glm::vec3(0);
 	direction = originalDirection;
 	up = originalUp;
 	side = originalSide;
@@ -21,13 +23,24 @@ void Camera::updateRes(int width, int height) {
 	focus = width / (2 * glm::tan(glm::radians(fov) / 2));
 }
 
-void Camera::updateFov(float fov) {
-	this->fov = fov;
-	focus = width / (2 * glm::tan(fov / 2));
+void Camera::updateFov() {
+	focus = width / (2 * glm::tan(glm::radians(fov) / 2));
+}
+
+void Camera::updateModel() {
+	glm::mat3 rotateX = glm::rotate(glm::mat4(1.0), glm::radians(rotation.x), originalUp);
+	glm::mat3 rotateY = glm::rotate(glm::mat4(1.0), glm::radians(-rotation.y), originalSide);
+	glm::mat3 rotateZ = glm::rotate(glm::mat4(1.0), glm::radians(rotation.z), originalDirection);
+	glm::mat3 finalRotate = rotateX * rotateY * rotateZ;
+
+	model = finalRotate * glm::mat3(originalSide, originalUp, originalDirection);
+	side = model[0];
+	up = model[1];
+	direction = model[2];
 }
 
 bool Camera::input(GLFWwindow* window) {
-	float speed = 1.0f * dt;
+	float speed = moveSpeed * dt;
 	bool moved = false;
 
 	// sprint
@@ -85,21 +98,17 @@ bool Camera::input(GLFWwindow* window) {
 void Camera::mouseInput(float dx, float dy, bool mouse) {
 	if (mouse) {
 		rotation.x += dx * dt * sensitivity;
-		rotation.y += dy * dt * sensitivity;
+		rotation.y -= dy * dt * sensitivity;
 	}
 	else {
 		rotation.x += dx;
-		rotation.y += dy;
+		rotation.y -= dy;
 	}
 
-	glm::mat3 rotateX = glm::rotate(glm::mat4(1.0), glm::radians(rotation.x), originalUp);
-	glm::mat3 rotateY = glm::rotate(glm::mat4(1.0), glm::radians(rotation.y), originalSide);
-	glm::mat3 finalRotate = rotateX * rotateY;
+	// clamp between -180, 180
+	rotation = glm::mod((rotation + 180.0f), 360.0f) - 180.0f;
 
-	model = finalRotate * glm::mat3(originalSide, originalUp, originalDirection);
-	side = model[0];
-	up = model[1];
-	direction = model[2];
+	updateModel();
 }
 
 
