@@ -13,7 +13,7 @@ public:
 	GLuint ID;
 
 	UBO();
-	void build(GLuint program, Sphere spheres[], int spheresLength);
+	void build(GLuint program, std::vector<Sphere> spheres, std::vector<Material> materials);
 	void bind();
 	void unBind();
 	void deleteUBO();

@@ -31,6 +31,7 @@
     <ClCompile Include="src\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\UBO.cpp" />
     <ClCompile Include="src\Uniforms.cpp" />

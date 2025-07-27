@@ -4,8 +4,10 @@ UBO::UBO() {
 	glGenBuffers(1, &ID);
 }
 
-void UBO::build(GLuint program, Sphere spheres[], int spheresLength) {	
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(Sphere) * spheresLength, spheres, GL_DYNAMIC_DRAW);
+void UBO::build(GLuint program, std::vector<Sphere> spheres, std::vector<Material> materials) {	
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(Sphere) * MAX_SPHERES + sizeof(Material) * MAX_MATERIALS, NULL, GL_DYNAMIC_DRAW);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Sphere) * spheres.size(), &spheres[0]);
+	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(Sphere) * MAX_SPHERES, sizeof(Material) * materials.size(), &materials[0]);
 	GLuint location = glGetUniformBlockIndex(program, "objects");
 	glUniformBlockBinding(program, location, 0);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, ID);

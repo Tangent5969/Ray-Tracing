@@ -113,69 +113,9 @@ int main() {
 	Uniforms uni;
 	uni.init(rayShader.program);
 
-
-	// materials
-	Material materials[7];
-	materials[0].color = glm::vec3(0.5, 0.2, 0.8);
-	materials[0].lightStrength = 1;
-	materials[0].lightColor = glm::vec3(0.5, 0.2, 0.8);
-	materials[0].smoothness = 0;
-
-	materials[1].color = glm::vec3(0.1, 0.8, 0.85);
-	materials[1].lightStrength = 0;
-	materials[1].lightColor = glm::vec3(0);
-	materials[1].smoothness = 0.2;
-
-	materials[2].color = glm::vec3(0.5, 0.7, 0.2);
-	materials[2].lightStrength = 0;
-	materials[2].lightColor = glm::vec3(0);
-	materials[2].smoothness = 0.95;
-	materials[2].gloss = 0.6;
-
-	materials[3].color = glm::vec3(0.8, 0.25, 0.25);
-	materials[3].lightStrength = 0;
-	materials[3].lightColor = glm::vec3(0);
-	materials[3].smoothness = 0;
-
-	// star
-	materials[4].color = glm::vec3(1, 0.9, 1);
-	materials[4].lightStrength = 50;
-	materials[4].lightColor = glm::vec3(1, 0.9, 1);
-	materials[4].smoothness = 0;
-
-	materials[5].smoothness = 0.8;
-	materials[5].gloss = 1;
-
-	materials[6].glass = true;
-	materials[6].smoothness =0.9995f;
-	materials[6].refraction = 1.01f;
-
-	// sphere objects
-	const int spheresLength = 6;
-	Sphere spheres[spheresLength];
-	spheres[0].pos = glm::vec3(0, 0, 3);
-	spheres[0].radius = 0.6;
-	spheres[0].mat = materials[0];
-
-	spheres[1].pos = glm::vec3(10, -1.1, 20);
-	spheres[1].radius = 5;
-	spheres[1].mat = materials[5];
-
-	spheres[2].pos = glm::vec3(2, -1, 0);
-	spheres[2].radius = 0.8;
-	spheres[2].mat = materials[2];
-
-	spheres[3].pos = glm::vec3(0, -10, 0);
-	spheres[3].radius = 9;
-	spheres[3].mat = materials[3];
-
-	// star
-	spheres[4].pos = glm::vec3(350, 100, -200);
-	spheres[4].radius = 50;
-	spheres[4].mat = materials[4];
-
-	spheres[5].pos = glm::vec3(-1, -0.4, 0);
-	spheres[5].mat = materials[6];
+	// get preset materials and spheres
+	std::vector<Material> materials = getMaterials();
+	std::vector<Sphere> spheres = getSpheres();
 
 
 	// initialize loop variables
@@ -188,7 +128,6 @@ int main() {
 	// imgui
     GUI gui(window);
 
-
 	// main loop
 	while (!glfwWindowShouldClose(window)) {
 		// input first
@@ -198,6 +137,7 @@ int main() {
 		cam.updateDT(dt);
 		input(window, dt);
 
+		
 
 		if (width != oldWidth || height != oldHeight) {
 			oldWidth = width;
@@ -240,15 +180,15 @@ int main() {
 		rayShader.use();
 
 		// uniforms
-		uni.update(cam.pos, cam.model, width, height, cam.focus, spheresLength, accumulationFrame);
+		uni.update(cam.pos, cam.model, width, height, cam.focus, spheres.size(), accumulationFrame);
 		UBO.bind();
-		UBO.build(rayShader.program, spheres, spheresLength);
+		UBO.build(rayShader.program, spheres, materials);
 
 		VAO.bind();
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		// gui logic and image
-		gui.mainLoop(FBO.texture, width, height, lockedMovement, changed, cam, dt);
+		gui.mainLoop(FBO.texture, width, height, lockedMovement, changed, cam, dt, materials, spheres);
 
 		FBO.unBind();
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);

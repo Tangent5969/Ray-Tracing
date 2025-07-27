@@ -37,7 +37,10 @@ struct Material {
 struct Sphere {
 	vec3 pos; // 12
 	float radius; // 4
-	Material mat; // 64
+	int matIndex; // 4
+	float pad1; // 4
+	float pad2; // 4
+	float pad3; // 4
 };
 
 struct hitData {
@@ -52,6 +55,7 @@ struct hitData {
 
 layout(std140) uniform objects {
 	Sphere spheres[maxSpheres];
+	Material materials[maxMaterials];
 };
 
 
@@ -122,7 +126,7 @@ hitData getCollision(Ray ray) {
 		if (hit.didHit) {
 			if (hit.dist < result.dist) {
 				result = hit;
-				result.mat = spheres[i].mat;
+				result.mat = materials[spheres[i].matIndex];
 			}
 		}
 	}
