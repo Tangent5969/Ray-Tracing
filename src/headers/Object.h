@@ -23,7 +23,7 @@ struct Material {
 struct Sphere {
 	glm::vec3 pos = glm::vec3(0); // 12
 	float radius = 0.5f; // 4
-	int matIndex; // 4
+	int matIndex = 0; // 4
 	float pad1; // 4
 	float pad2; // 4
 	float pad3; // 4

@@ -27,10 +27,14 @@ private:
 	bool materialFlag = false;
 	bool debugFlag = false;
 	bool newMaterialFlag = false;
+	bool newSphereFlag = false;
+
 
 	Material tempMaterial;
+	Sphere tempSphere;
 
 	bool editMaterial(Material* mat);
+	bool editSphere(Sphere* sphere, std::vector<Material> materials);
 };
 
 #endif

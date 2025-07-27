@@ -21,7 +21,6 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 
 	ImGuiWindowFlags windowFlags = lockedMovement ? 0 : ImGuiWindowFlags_NoMove;
 
-
 	// main menu
 	BeginMainMenuBar();
 	int menuHeight = GetFrameHeight();
@@ -102,19 +101,20 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 		if (Begin("Materials", &materialFlag, windowFlags)) {
 
 			// tree buttons
-			bool openAll = false, closeAll = false;
+			bool openAllMat = false, closeAllMat = false;
 			if (Button("Expand All")) {
-				openAll = true;
+				openAllMat = true;
 			}
 			SameLine();
 			if (Button("Close All")) {
-				closeAll = true;
+				closeAllMat = true;
 			}
 
 			// add new material
 			if (newMaterialFlag) {
-				Begin("New Material", &newMaterialFlag);
+				Begin("New Material", &newMaterialFlag, windowFlags | ImGuiWindowFlags_NoDocking);
 				editMaterial(&tempMaterial);
+				Separator();
 				if (Button("Add Material")) {
 					materials.push_back(tempMaterial);
 				}
@@ -127,10 +127,10 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 				}
 			}
 
-			// lists all materials
+			// list all materials
 			for (int i = 0; i < materials.size(); i++) {
-				if (openAll) SetNextItemOpen(true);
-				if (closeAll) SetNextItemOpen(false);
+				if (openAllMat) SetNextItemOpen(true);
+				if (closeAllMat) SetNextItemOpen(false);
 
 				if (TreeNodeEx(("Material " + std::to_string(i)).c_str())) {
 					Material* mat = &materials[i];
@@ -145,9 +145,80 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	// object customisation
 	if (objectFlag) {
 		if (Begin("Objects", &objectFlag, windowFlags)) {
-			// add objects
-			// remove objects
-			// edit existing objects
+
+			// tree buttons
+			bool openAllSphere = false, closeAllSphere = false;
+			if (Button("Expand All##1")) {
+				openAllSphere = true;
+			}
+			SameLine();
+			if (Button("Close All##1")) {
+				closeAllSphere = true;
+			}
+
+			// add new sphere
+			if (newSphereFlag) {
+				Begin("New Sphere", &newSphereFlag, windowFlags | ImGuiWindowFlags_NoDocking);
+				editSphere(&tempSphere, materials);
+				Separator();
+				if (Button("Add Sphere")) {
+					spheres.push_back(tempSphere);
+					changed = true;
+				}
+				End();
+			}
+			else {
+				if (Button("New Sphere")) {
+					tempSphere = Sphere{};
+					newSphereFlag = true;
+				}
+				SameLine();
+			}
+
+			// delete all spheres
+			if (!spheres.empty()) {
+				if (Button("Delete All")) {
+					OpenPopup("Delete?");
+				}
+
+				// pop up
+				SetNextWindowPos(GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+				if (BeginPopupModal("Delete?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					Text("Delete All Spheres?");
+					Separator();
+					if (Button("Confirm")) {
+						spheres.clear();
+						changed = true;
+						CloseCurrentPopup();
+					}
+					SameLine();
+					if (Button("Cancel")) {
+						CloseCurrentPopup();
+					}
+					EndPopup();
+				}
+			}
+
+
+			// list all spheres
+			for (int i = 0; i < spheres.size(); i++) {
+				if (openAllSphere) SetNextItemOpen(true);
+				if (closeAllSphere) SetNextItemOpen(false);
+
+				if (TreeNodeEx(("Sphere " + std::to_string(i)).c_str())) {
+					Sphere* sphere = &spheres[i];
+					changed = editSphere(sphere, materials);
+
+					// delete spheres
+					ImGui::SeparatorText("Delete Sphere");
+					if (Button(("Delete##" + std::to_string(i)).c_str())) {
+						spheres.erase(spheres.begin() + i);
+						changed = true;
+					}
+					TreePop();
+				}
+			}
 		}
 		End();
 	}
@@ -187,17 +258,15 @@ bool GUI::editMaterial(Material* mat) {
 	}
 
 	// light
-	if (CollapsingHeader("Light")) {
-		float lightColor[]{ mat->lightColor.x, mat->lightColor.y, mat->lightColor.z };
-		if (ColorEdit3("Light Colour", lightColor)) {
-			mat->lightColor = glm::vec3(lightColor[0], lightColor[1], lightColor[2]);
-			changed = true;
-		}
+	float lightColor[]{ mat->lightColor.x, mat->lightColor.y, mat->lightColor.z };
+	if (ColorEdit3("Light Colour", lightColor)) {
+		mat->lightColor = glm::vec3(lightColor[0], lightColor[1], lightColor[2]);
+		changed = true;
+	}
 
-		if (DragFloat("Light Strength", &mat->lightStrength, 0.05, 0, ImGuiSliderFlags_AlwaysClamp)) {
-			if (mat->lightStrength < 0) mat->lightStrength = 0;
-			changed = true;
-		}
+	if (DragFloat("Light Strength", &mat->lightStrength, 0.05, 0, ImGuiSliderFlags_AlwaysClamp)) {
+		if (mat->lightStrength < 0) mat->lightStrength = 0;
+		changed = true;
 	}
 
 	// glass
@@ -223,6 +292,33 @@ bool GUI::editMaterial(Material* mat) {
 
 	if (DragFloat("Smoothness", &mat->smoothness, 0.001, 0, 1, "%f", ImGuiSliderFlags_AlwaysClamp)) {
 		if (mat->smoothness < 0) mat->smoothness = 0;
+		changed = true;
+	}
+
+	return changed;
+}
+
+bool GUI::editSphere(Sphere* sphere, std::vector<Material> materials) {
+	bool changed = false;
+
+	ImGui::SeparatorText("Sphere Position");
+	if (DragFloat("Pos X", &sphere->pos.x, 0.05)) {
+		changed = true;
+	}
+	if (DragFloat("Pos Y", &sphere->pos.y, 0.05)) {
+		changed = true;
+	}
+	if (DragFloat("Pos Z", &sphere->pos.z, 0.05)) {
+		changed = true;
+	}
+
+	ImGui::SeparatorText("Other");
+	if (DragFloat("Radius", &sphere->radius, 0.01, 0.01)) {
+		if (sphere->radius < 0.01) sphere->radius = 0.01;
+		changed = true;
+	}
+
+	if (SliderInt("Material", &sphere->matIndex, 0, materials.size() - 1, "%i", ImGuiSliderFlags_AlwaysClamp)) {
 		changed = true;
 	}
 

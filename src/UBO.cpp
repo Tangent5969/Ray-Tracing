@@ -5,6 +5,7 @@ UBO::UBO() {
 }
 
 void UBO::build(GLuint program, std::vector<Sphere> spheres, std::vector<Material> materials) {	
+	if (spheres.empty()) return;
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(Sphere) * MAX_SPHERES + sizeof(Material) * MAX_MATERIALS, NULL, GL_DYNAMIC_DRAW);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(Sphere) * spheres.size(), &spheres[0]);
 	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(Sphere) * MAX_SPHERES, sizeof(Material) * materials.size(), &materials[0]);

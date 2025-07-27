@@ -137,8 +137,7 @@ int main() {
 		cam.updateDT(dt);
 		input(window, dt);
 
-		
-
+		// check for resolution change
 		if (width != oldWidth || height != oldHeight) {
 			oldWidth = width;
 			oldHeight = height;
