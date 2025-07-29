@@ -39,7 +39,6 @@
     <ClCompile Include="src\VBO.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\shaders\FBO.frag" />
     <None Include="src\shaders\Default.vert" />
     <None Include="src\shaders\Ray.frag" />
   </ItemGroup>

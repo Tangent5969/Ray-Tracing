@@ -24,13 +24,18 @@ int width = 1280;
 int height = 720;
 int oldWidth = width;
 int oldHeight = height;
+int rayCount = 3;
+int maxBounces = 75;
+float environmentLight = true;
 float prevX = 0.0f;
 float prevY = 0.0f;
+bool renderFlag = false;
 bool changed = false;
 bool lockedMovement = false;
 Camera cam(width, height, 65.0f);
 
-// detects for tab key just pressed
+// detects for keys just pressed
+bool escapeHeld = false;
 bool tabHeld = false;
 
 
@@ -60,7 +65,7 @@ int main() {
 	};
 
 
-	GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "program", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(windowWidth, windowHeight, "Raytrace", NULL, NULL);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
@@ -87,12 +92,8 @@ int main() {
 
 	// create shaders
 	Shader rayShader("./src/shaders/Default.vert", "./src/shaders/Ray.frag");
-	Shader FBOShader("./src/shaders/Default.vert", "./src/shaders/FBO.frag");
-
 	rayShader.use();
 	glUniform1i(glGetUniformLocation(rayShader.program, "text"), 0);
-	FBOShader.use();
-	glUniform1i(glGetUniformLocation(FBOShader.program, "text"), 0);
 
 	VAO VAO;
 	VBO VBO(vertices, sizeof(vertices));
@@ -163,23 +164,12 @@ int main() {
 			accumulationFrame++;
 		}
 
-
-		// position debug
-		//std::cout << cam.pos.x << " " << cam.pos.y << " " << cam.pos.z << std::endl; //"			 dir " << cam.direction.x << " " << cam.direction.y << " " << cam.direction.z << std::endl;
-		
-		// fps debug
-		//std::cout << int (1 / dt) << std::endl;
-
-		// viewport size debug
-		//std::cout << width << " h " << height << std::endl;
-
-
 		// render scene to FBO
 		FBO.bind();
 		rayShader.use();
 
 		// uniforms
-		uni.update(cam.pos, cam.model, width, height, cam.focus, spheres.size(), accumulationFrame);
+		uni.update(rayCount, maxBounces, cam.pos, cam.model, width, height, cam.focus, spheres.size(), accumulationFrame, environmentLight);
 		UBO.bind();
 		UBO.build(rayShader.program, spheres, materials);
 
@@ -187,7 +177,7 @@ int main() {
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		// gui logic and image
-		gui.mainLoop(FBO.texture, width, height, lockedMovement, changed, cam, dt, materials, spheres);
+		gui.mainLoop(FBO.texture, width, height, lockedMovement, renderFlag, changed, cam, dt, accumulationFrame, materials, spheres, rayCount, maxBounces, environmentLight);
 
 		FBO.unBind();
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -205,9 +195,6 @@ int main() {
 	FBO.deleteFBO();
 	UBO.deleteUBO();
 	rayShader.deleteShader();
-	FBOShader.deleteShader();
-
-	// imgui
 	gui.deleteGUI();
 
 	glfwDestroyWindow(window);
@@ -240,10 +227,20 @@ void mouse_position_callback(GLFWwindow* window, double xPos, double yPos) {
 
 // keyboard
 void input(GLFWwindow* window, float dt) {
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) 
-		glfwSetWindowShouldClose(window, true);
+	// closes rendering or program
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+		if (!escapeHeld) {
+			if (renderFlag) renderFlag = false;
+			else glfwSetWindowShouldClose(window, true);
+		}
+		escapeHeld = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_RELEASE) escapeHeld = false;
 
-	// emable or disable movement
+	// disables controls
+	if (renderFlag) return;
+
+	// enable or disable movement
 	if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS) {
 		if (!tabHeld) {
 			lockedMovement = !lockedMovement;

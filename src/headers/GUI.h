@@ -17,24 +17,47 @@ using namespace ImGui;
 class GUI {
 public:
 	GUI(GLFWwindow* window);
-	void mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& changed, Camera& cam, float dt, std::vector<Material>& materials, std::vector<Sphere>& spheres);
+	void mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, float dt, int accumulationFrame, std::vector<Material>& materials, std::vector<Sphere>& spheres, int& rayCount, int& maxBounces, float& environmentLight);
 	void render();
 	void deleteGUI();
 
 private:
+	bool renderSettingsFlag = false;
 	bool cameraFlag = false;
 	bool objectFlag = false;
 	bool materialFlag = false;
 	bool debugFlag = false;
 	bool newMaterialFlag = false;
 	bool newSphereFlag = false;
+	bool matchResolutionFlag = true;
 
+	int renderFrames = 1000;
+	int renderRays = 5;
+	int renderBounces = 500;
+	int renderWidth = 1920;
+	int renderHeight = 1080;
+	glm::vec3 renderCamPos = glm::vec3(0);
+	glm::vec3 renderCamRot = glm::vec3(0);
+	float renderCamFov = 65;
+	bool renderCamFlag = false;
 
 	Material tempMaterial;
 	Sphere tempSphere;
 
 	bool editMaterial(Material* mat);
 	bool editSphere(Sphere* sphere, std::vector<Material> materials);
+	void startRender(int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam);
+
 };
+
+static int GCD(int x, int y) {
+	int z;
+	while (y != 0) {
+		z = y;
+		y = x % y;
+		x = z;
+	}
+	return x;
+}
 
 #endif

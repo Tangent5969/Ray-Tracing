@@ -4,12 +4,12 @@
 
 #define maxSpheres 100
 #define maxMaterials 100
-#define maxRays 3
-#define maxBounces 75
 
 in vec2 texCoords;
 out vec4 FragColor;
 
+uniform int rayCount;
+uniform int maxBounces;
 uniform vec3 camPos;
 uniform mat4 model;
 uniform vec2 res;
@@ -17,6 +17,7 @@ uniform float focus;
 uniform int spheresLength;
 uniform sampler2D text;
 uniform int accumulationFrame;
+uniform bool environmentLightFlag;
 
 struct Ray {
 	vec3 origin;
@@ -212,7 +213,9 @@ vec3 trace(Ray ray, inout uint seed) {
 			
 		}
 		else {
-			light += environmentLight(ray) * color;
+			if (environmentLightFlag) {
+				light += environmentLight(ray) * color;
+			}
 			break;
 		}
 	}
@@ -232,10 +235,10 @@ void main() {
 	
 	vec3 totalLight = vec3(0);
 
-	for (int i = 0; i < maxRays; i++) {
+	for (int i = 0; i < rayCount; i++) {
 		totalLight += trace(ray, seed);
 	}
-	totalLight /= maxRays;
+	totalLight /= rayCount;
 
 	// pixel accumulation from previous frames
 	float weight = 1.0f / accumulationFrame;

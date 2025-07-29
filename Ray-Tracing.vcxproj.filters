@@ -83,9 +83,6 @@
     <None Include="src\shaders\Ray.frag">
       <Filter>Resource Files\Shader Files</Filter>
     </None>
-    <None Include="src\shaders\FBO.frag">
-      <Filter>Resource Files\Shader Files</Filter>
-    </None>
     <None Include="src\shaders\Default.vert">
       <Filter>Resource Files\Shader Files</Filter>
     </None>

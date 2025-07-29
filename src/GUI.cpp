@@ -13,50 +13,202 @@ GUI::GUI(GLFWwindow* window) {
 }
 
 
-void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& changed, Camera& cam, float dt, std::vector<Material>& materials, std::vector<Sphere>& spheres) {
+void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, float dt, int accumulationFrame, std::vector<Material>& materials, std::vector<Sphere>& spheres, int& rayCount, int& maxBounces, float& environmentLight) {
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	NewFrame();
 	//ShowDemoWindow();
 
+
 	ImGuiWindowFlags windowFlags = lockedMovement ? 0 : ImGuiWindowFlags_NoMove;
+	ImVec2 viewSize;
+
+
+	// rendering
+	if (renderFlag) {
+		// render finished
+		if (accumulationFrame >= renderFrames) {
+			renderFlag = false;
+			return;
+		}
+
+		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		SetNextWindowSize(GetIO().DisplaySize);
+		SetNextWindowPos(ImVec2(0, 0));
+		if (Begin("Render", NULL, ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove)) {
+			viewSize = GetContentRegionAvail();
+			Image((void*)(intptr_t)texture, ImVec2(viewSize[0], viewSize[1] - GetFrameHeightWithSpacing()), ImVec2(0, 1), ImVec2(1, 0));
+			ProgressBar((float) accumulationFrame / renderFrames, ImVec2(-1.0f, 0.0f), (std::to_string(accumulationFrame) + "/" + std::to_string(renderFrames)).c_str());
+		}
+		End();
+
+		PopStyleVar();
+		return;
+	}
+
 
 	// main menu
 	BeginMainMenuBar();
-	int menuHeight = GetFrameHeight();
+	if (BeginMenu("Render")) {
+		if (MenuItem("Start##Render")) {
+			startRender(width, height, lockedMovement, renderFlag, changed, cam);
+		}
+		if (MenuItem("Settings##Render")) renderSettingsFlag = !renderSettingsFlag;
+		EndMenu();
+	}
+
 	if (MenuItem("Camera")) cameraFlag = !cameraFlag;
-	if (MenuItem("Objects")) objectFlag = !objectFlag;
-	if (MenuItem("Materials")) materialFlag = !materialFlag;
+
+	if (BeginMenu("Objects")) {
+		if (MenuItem("New Object##Objects")) newSphereFlag = !newSphereFlag;
+		if (MenuItem("Settings##Objects")) objectFlag = !objectFlag;
+		EndMenu();
+	}
+
+	if (BeginMenu("Materials")) {
+		if (MenuItem("New Material##Materials")) newMaterialFlag = !newMaterialFlag;
+		if (MenuItem("Settings##Materials")) materialFlag = !materialFlag;
+		EndMenu();
+	}	
+
 	if (MenuItem("Debug")) debugFlag = !debugFlag;
 	EndMainMenuBar();
 
 	ImVec2 windowSize = GetIO().DisplaySize;
-	windowSize = ImVec2(windowSize.x, windowSize.y - menuHeight);
+	windowSize = ImVec2(windowSize.x, windowSize.y - GetFrameHeight());
 
 	// dock for nodes 
 	PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	SetNextWindowSize(windowSize);
-	SetNextWindowPos(ImVec2(0, menuHeight));
+	SetNextWindowPos(ImVec2(0, GetFrameHeight()));
 	Begin("Dock", NULL, ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 	ImGuiID dockID = GetID("Dock");
 	DockSpace(dockID, ImVec2(0.0f, 0.0f));
 
 	End();
 
-	// shader output
+	// viewport
 	if (Begin("View", NULL, windowFlags)) {
-		ImVec2 viewSize = GetContentRegionAvail();
-		width = viewSize[0];
-		height = viewSize[1];
-		Image((void*)(intptr_t)texture, ImVec2(width, height), ImVec2(0, 1), ImVec2(1, 0));
+		viewSize = GetContentRegionAvail();
+		if (matchResolutionFlag) {
+			width = viewSize.x;
+			height = viewSize.y;
+		}
+		Image((void*)(intptr_t)texture, ImVec2(viewSize[0], viewSize[1]), ImVec2(0, 1), ImVec2(1, 0));
 	}
 	End();
+
+	// render settings
+	if (renderSettingsFlag) {
+		if (Begin("Render Settings", &renderSettingsFlag, windowFlags)) {
+			SeparatorText("Window");
+
+			// window resolution
+			Text("Resolution %.0fx%.0f", viewSize.x, viewSize.y);
+			int gcd = GCD(viewSize.x, viewSize.y);
+			Text("Aspect ratio %.0f:%.0f", viewSize.x / gcd, viewSize.y / gcd);
+			
+
+			if (CollapsingHeader("Viewport")) {
+				// preview resolution
+				Checkbox("Match Resolution", &matchResolutionFlag);
+				if (matchResolutionFlag) BeginDisabled();
+				if (InputInt("Width##Viewport", &width, 0)) {
+					if (width < 1) width = viewSize.x;
+				}
+				if (InputInt("Height##Viewport", &height, 0)) {
+					if (height < 1) height = viewSize.y;
+				}
+				gcd = GCD(width, height);
+				Text("Aspect ratio %i:%i", width / gcd, height / gcd);
+				if (matchResolutionFlag) EndDisabled();
+				Separator();
+
+				// parameters
+				if (InputInt("Ray Count##Viewport", &rayCount, 0)) {
+					if (rayCount < 1) rayCount = 1;
+					changed = true;
+				}
+				if (InputInt("Max Bounces##Viewport", &maxBounces, 0)) {
+					if (maxBounces < 0) maxBounces = 0;
+					changed = true;
+				}
+				Separator();
+			}
+
+
+			if (CollapsingHeader("Render")) {
+
+				// render resolution
+				if (InputInt("Width##Render", &renderWidth, 0)) {
+					if (width < 1) width = viewSize.x;
+				}
+				if (InputInt("Height##Render", &renderHeight, 0)) {
+					if (height < 1) height = viewSize.y;
+				}
+				gcd = GCD(renderWidth, renderHeight);
+				Text("Aspect ratio %i:%i", renderWidth / gcd, renderHeight / gcd);
+				Separator();
+
+				// parameters
+				if (InputInt("Frames##Render", &renderFrames, 0)) {
+					if (renderFrames < 1) renderFrames = 1;
+				}
+				if (InputInt("Ray Count##Render", &renderRays, 0)) {
+					if (renderRays < 1) renderRays = 1;
+				}
+				if (InputInt("Max Bounces##Render", &renderBounces, 0)) {
+					if (renderBounces < 0) renderBounces = 0;
+				}
+				Separator();
+			}
+
+
+			// camera settings
+			if (CollapsingHeader("Render Camera")) {
+				SeparatorText("Camera Position");
+				DragFloat("Pos X##Render", &renderCamPos.x, 0.05);
+				DragFloat("Pos Y##Render", &renderCamPos.y, 0.05);
+				DragFloat("Pos Z##Render", &renderCamPos.z, 0.05);
+
+				SeparatorText("Camera Direction");
+				SliderFloat("Pitch##Render", &renderCamRot.y, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+				SliderFloat("Yaw##Render", &renderCamRot.x, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+				SliderFloat("Roll##Render", &renderCamRot.z, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp);
+
+				Spacing();
+				SliderFloat("Fov##Render", &renderCamFov, 1, 180, "%.0f", ImGuiSliderFlags_AlwaysClamp);
+			}
+
+
+			SeparatorText("Other");
+
+			bool environment = environmentLight;
+			if (Checkbox("Environment Light", &environment)) {
+				environmentLight = environment;
+				changed = true;
+			}
+
+			Checkbox("Render Camera##Checkbox", &renderCamFlag);
+
+			if (Button("Set Camera")) {
+				renderCamPos = cam.pos;
+				renderCamRot = cam.rotation;
+				renderCamFov = cam.fov;
+			}
+
+			if (Button("Start Render")) {
+				startRender(width, height, lockedMovement, renderFlag, changed, cam);
+			}
+		}
+		End();
+	}
 
 	// camera controls
 	if (cameraFlag) {
 		if (Begin("Camera", &cameraFlag, windowFlags)) {
 
-			ImGui::SeparatorText("Camera Position");
+			SeparatorText("Camera Position");
 			if (DragFloat("Pos X", &cam.pos.x, 0.05)) {
 				changed = true;
 			}
@@ -67,7 +219,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 				changed = true;
 			}
 
-			ImGui::SeparatorText("Camera Direction");
+			SeparatorText("Camera Direction");
 			if (SliderFloat("Pitch", &cam.rotation.y, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
 				cam.updateModel();
 				changed = true;
@@ -81,7 +233,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 				changed = true;
 			}
 
-			ImGui::SeparatorText("Other");
+			SeparatorText("Other");
 			if (SliderFloat("Fov", &cam.fov, 1, 180, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
 				cam.updateFov();
 				changed = true;
@@ -110,17 +262,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 				closeAllMat = true;
 			}
 
-			// add new material
-			if (newMaterialFlag) {
-				Begin("New Material", &newMaterialFlag, windowFlags | ImGuiWindowFlags_NoDocking);
-				editMaterial(&tempMaterial);
-				Separator();
-				if (Button("Add Material")) {
-					materials.push_back(tempMaterial);
-				}
-				End();
-			}
-			else {
+			if (!newMaterialFlag) {
 				if (Button("New Material")) {
 					tempMaterial = Material{};
 					newMaterialFlag = true;
@@ -142,6 +284,18 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 		End();
 	}
 
+	// add new material
+	if (newMaterialFlag) {
+		if (Begin("New Material", &newMaterialFlag, windowFlags | ImGuiWindowFlags_NoDocking)) {
+			editMaterial(&tempMaterial);
+			Separator();
+			if (Button("Add Material")) {
+				materials.push_back(tempMaterial);
+			}
+		}
+		End();
+	}
+
 	// object customisation
 	if (objectFlag) {
 		if (Begin("Objects", &objectFlag, windowFlags)) {
@@ -156,18 +310,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 				closeAllSphere = true;
 			}
 
-			// add new sphere
-			if (newSphereFlag) {
-				Begin("New Sphere", &newSphereFlag, windowFlags | ImGuiWindowFlags_NoDocking);
-				editSphere(&tempSphere, materials);
-				Separator();
-				if (Button("Add Sphere")) {
-					spheres.push_back(tempSphere);
-					changed = true;
-				}
-				End();
-			}
-			else {
+			if (!newSphereFlag) {
 				if (Button("New Sphere")) {
 					tempSphere = Sphere{};
 					newSphereFlag = true;
@@ -211,7 +354,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 					changed = editSphere(sphere, materials);
 
 					// delete spheres
-					ImGui::SeparatorText("Delete Sphere");
+					SeparatorText("Delete Sphere");
 					if (Button(("Delete##" + std::to_string(i)).c_str())) {
 						spheres.erase(spheres.begin() + i);
 						changed = true;
@@ -223,12 +366,26 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 		End();
 	}
 
+	// add new sphere
+	if (newSphereFlag) {
+		if (Begin("New Sphere", &newSphereFlag, windowFlags | ImGuiWindowFlags_NoDocking)) {
+			editSphere(&tempSphere, materials);
+			Separator();
+			if (Button("Add Sphere")) {
+				spheres.push_back(tempSphere);
+				changed = true;
+			}
+		}
+		End();
+	}
+
 	// debug display
 	if (debugFlag) {
 		SetNextWindowBgAlpha(0.35f);
 		Begin("Debug", NULL, windowFlags | ImGuiWindowFlags_NoTitleBar);
 		Text(" %.0f fps", 1.0f / dt);
 		Text(" %.2f ms", dt * 1000);
+		Text(" %i frames", accumulationFrame);
 		End();
 	}
 
@@ -246,6 +403,23 @@ void GUI::deleteGUI() {
 	DestroyContext();
 }
 
+
+void GUI::startRender(int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam) {
+	renderFlag = true;
+	lockedMovement = true;
+	changed = true;
+	width = renderWidth;
+	height = renderHeight;
+
+	if (renderCamFlag) {
+		cam.pos = renderCamPos;
+		cam.rotation = renderCamRot;
+		cam.fov = renderCamFov;
+		cam.updateModel();
+		cam.updateFov();
+	}
+
+}
 
 bool GUI::editMaterial(Material* mat) {
 	bool changed = false;
@@ -301,7 +475,7 @@ bool GUI::editMaterial(Material* mat) {
 bool GUI::editSphere(Sphere* sphere, std::vector<Material> materials) {
 	bool changed = false;
 
-	ImGui::SeparatorText("Sphere Position");
+	SeparatorText("Sphere Position");
 	if (DragFloat("Pos X", &sphere->pos.x, 0.05)) {
 		changed = true;
 	}
@@ -312,7 +486,7 @@ bool GUI::editSphere(Sphere* sphere, std::vector<Material> materials) {
 		changed = true;
 	}
 
-	ImGui::SeparatorText("Other");
+	SeparatorText("Other");
 	if (DragFloat("Radius", &sphere->radius, 0.01, 0.01)) {
 		if (sphere->radius < 0.01) sphere->radius = 0.01;
 		changed = true;
