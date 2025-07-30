@@ -28,6 +28,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	if (renderFlag) {
 		// render finished
 		if (accumulationFrame >= renderFrames || IsKeyPressed(ImGuiKey_Escape)) {
+			saveImage("image.png", texture, width, height);
 			renderFlag = false;
 
 			// restore viewport settings
@@ -67,6 +68,9 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	if (BeginMenu("Render")) {
 		if (MenuItem("Start##Render")) {
 			startRender(width, height, lockedMovement, renderFlag, changed, cam, rayCount, maxBounces);
+			EndMenu();
+			EndMainMenuBar();
+			return;
 		}
 		if (MenuItem("Settings##Render")) renderSettingsFlag = !renderSettingsFlag;
 		EndMenu();

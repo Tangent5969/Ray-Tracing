@@ -1,7 +1,8 @@
 #ifndef GUI_H
 #define GUI_H
 
-#include<GLFW/glfw3.h>
+#include<stb/stb_image_write.h>
+#include<glad/glad.h>
 #include<glm/glm.hpp>
 #include<vector>
 #include<string>
@@ -60,6 +61,13 @@ private:
 	void startRender(int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, int& rayCount, int& maxBounces);
 
 };
+
+static void saveImage(const char* fileName, GLuint texture, int width, int height) {
+	std::vector<unsigned char> data(width * height * 3);
+	glGetTextureImage(texture, 0, GL_RGB, GL_UNSIGNED_BYTE, width * height * 3, data.data());
+	stbi_flip_vertically_on_write(true);
+	stbi_write_png(fileName, width, height, 3, data.data(), width * 3);
+}
 
 static int GCD(int x, int y) {
 	int z;
