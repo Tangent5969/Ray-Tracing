@@ -27,8 +27,23 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	// rendering
 	if (renderFlag) {
 		// render finished
-		if (accumulationFrame >= renderFrames) {
+		if (accumulationFrame >= renderFrames || IsKeyPressed(ImGuiKey_Escape)) {
 			renderFlag = false;
+
+			// restore viewport settings
+			width = viewWidth;
+			height = viewHeight;
+			rayCount = viewRays;
+			maxBounces = viewBounces;
+
+			if (renderCamFlag) {
+				cam.pos = viewCamPos;
+				cam.rotation = viewCamRot;
+				cam.fov = viewCamFov;
+				cam.updateModel();
+				cam.updateFov();
+			}
+
 			return;
 		}
 
@@ -51,7 +66,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	BeginMainMenuBar();
 	if (BeginMenu("Render")) {
 		if (MenuItem("Start##Render")) {
-			startRender(width, height, lockedMovement, renderFlag, changed, cam);
+			startRender(width, height, lockedMovement, renderFlag, changed, cam, rayCount, maxBounces);
 		}
 		if (MenuItem("Settings##Render")) renderSettingsFlag = !renderSettingsFlag;
 		EndMenu();
@@ -91,8 +106,8 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	if (Begin("View", NULL, windowFlags)) {
 		viewSize = GetContentRegionAvail();
 		if (matchResolutionFlag) {
-			width = viewSize.x;
-			height = viewSize.y;
+			width = viewSize.x * scale;
+			height = viewSize.y * scale;
 		}
 		Image((void*)(intptr_t)texture, ImVec2(viewSize[0], viewSize[1]), ImVec2(0, 1), ImVec2(1, 0));
 	}
@@ -112,16 +127,24 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 			if (CollapsingHeader("Viewport")) {
 				// preview resolution
 				Checkbox("Match Resolution", &matchResolutionFlag);
-				if (matchResolutionFlag) BeginDisabled();
-				if (InputInt("Width##Viewport", &width, 0)) {
-					if (width < 1) width = viewSize.x;
+				if (matchResolutionFlag) {
+					float slideScale = scale * scale * 100;
+					if (SliderFloat("Resolution", &slideScale, 1, 400, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
+						scale = slideScale / 100;
+						scale = glm::sqrt(scale);
+					}
+					Text("Resolution %ix%i", width, height);
 				}
-				if (InputInt("Height##Viewport", &height, 0)) {
-					if (height < 1) height = viewSize.y;
+				else {
+					if (InputInt("Width##Viewport", &width, 0)) {
+						if (width < 1) width = viewSize.x;
+					}
+					if (InputInt("Height##Viewport", &height, 0)) {
+						if (height < 1) height = viewSize.y;
+					}
+					gcd = GCD(width, height);
+					Text("Aspect ratio %i:%i", width / gcd, height / gcd);
 				}
-				gcd = GCD(width, height);
-				Text("Aspect ratio %i:%i", width / gcd, height / gcd);
-				if (matchResolutionFlag) EndDisabled();
 				Separator();
 
 				// parameters
@@ -198,7 +221,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 			}
 
 			if (Button("Start Render")) {
-				startRender(width, height, lockedMovement, renderFlag, changed, cam);
+				startRender(width, height, lockedMovement, renderFlag, changed, cam, rayCount, maxBounces);
 			}
 		}
 		End();
@@ -276,7 +299,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 
 				if (TreeNodeEx(("Material " + std::to_string(i)).c_str())) {
 					Material* mat = &materials[i];
-					changed = editMaterial(mat);
+					changed = editMaterial(mat) || changed;
 					TreePop();
 				}
 			}
@@ -351,7 +374,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 
 				if (TreeNodeEx(("Sphere " + std::to_string(i)).c_str())) {
 					Sphere* sphere = &spheres[i];
-					changed = editSphere(sphere, materials);
+					changed = editSphere(sphere, materials) || changed;
 
 					// delete spheres
 					SeparatorText("Delete Sphere");
@@ -404,14 +427,29 @@ void GUI::deleteGUI() {
 }
 
 
-void GUI::startRender(int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam) {
+void GUI::startRender(int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, int& rayCount, int& maxBounces) {
+	// backup viewport settings
+	viewWidth = width;
+	viewHeight = height;
+	viewRays = rayCount;
+	viewBounces = maxBounces;
+
+	// apply render settings
 	renderFlag = true;
 	lockedMovement = true;
 	changed = true;
 	width = renderWidth;
 	height = renderHeight;
+	rayCount = renderRays;
+	maxBounces = renderBounces;
 
 	if (renderCamFlag) {
+		// backup viewport cam settings
+		viewCamPos = cam.pos;
+		viewCamRot = cam.rotation;
+		viewCamFov = cam.fov;
+
+		// apply render cam settings
 		cam.pos = renderCamPos;
 		cam.rotation = renderCamRot;
 		cam.fov = renderCamFov;

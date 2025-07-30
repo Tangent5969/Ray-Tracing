@@ -227,13 +227,13 @@ void mouse_position_callback(GLFWwindow* window, double xPos, double yPos) {
 
 // keyboard
 void input(GLFWwindow* window, float dt) {
-	// closes rendering or program
+
+	// closes program
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		if (!escapeHeld) {
-			if (renderFlag) renderFlag = false;
-			else glfwSetWindowShouldClose(window, true);
+			if (!renderFlag) glfwSetWindowShouldClose(window, true);
+			escapeHeld = true;
 		}
-		escapeHeld = true;
 	}
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_RELEASE) escapeHeld = false;
 

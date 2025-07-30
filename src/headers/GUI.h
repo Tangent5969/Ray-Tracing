@@ -31,6 +31,7 @@ private:
 	bool newSphereFlag = false;
 	bool matchResolutionFlag = true;
 
+	// render settings
 	int renderFrames = 1000;
 	int renderRays = 5;
 	int renderBounces = 500;
@@ -41,12 +42,22 @@ private:
 	float renderCamFov = 65;
 	bool renderCamFlag = false;
 
+	// backup viewport settings
+	int viewRays;
+	int viewBounces;
+	int viewWidth;
+	int viewHeight;
+	glm::vec3 viewCamPos;
+	glm::vec3 viewCamRot;
+	float viewCamFov;
+
+	float scale = 1;
 	Material tempMaterial;
 	Sphere tempSphere;
 
 	bool editMaterial(Material* mat);
 	bool editSphere(Sphere* sphere, std::vector<Material> materials);
-	void startRender(int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam);
+	void startRender(int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, int& rayCount, int& maxBounces);
 
 };
 
