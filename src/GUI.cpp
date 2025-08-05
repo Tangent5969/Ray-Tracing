@@ -28,7 +28,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	if (renderFlag) {
 		// render finished
 		if (accumulationFrame >= renderFrames || IsKeyPressed(ImGuiKey_Escape)) {
-			saveImage("image.png", width, height);
+			saveImage(savePath, width, height);
 			renderFlag = false;
 
 			// restore viewport settings
@@ -68,12 +68,12 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	if (BeginMenu("Render")) {
 		if (MenuItem("Start##Render")) {
 			startRender(width, height, lockedMovement, renderFlag, changed, cam, rayCount, maxBounces);
-			EndMenu();
+			ImGui::EndMenu();
 			EndMainMenuBar();
 			return;
 		}
 		if (MenuItem("Settings##Render")) renderSettingsFlag = !renderSettingsFlag;
-		EndMenu();
+		ImGui::EndMenu();
 	}
 
 	if (MenuItem("Camera")) cameraFlag = !cameraFlag;
@@ -81,13 +81,13 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	if (BeginMenu("Objects")) {
 		if (MenuItem("New Object##Objects")) newSphereFlag = !newSphereFlag;
 		if (MenuItem("Settings##Objects")) objectFlag = !objectFlag;
-		EndMenu();
+		ImGui::EndMenu();
 	}
 
 	if (BeginMenu("Materials")) {
 		if (MenuItem("New Material##Materials")) newMaterialFlag = !newMaterialFlag;
 		if (MenuItem("Settings##Materials")) materialFlag = !materialFlag;
-		EndMenu();
+		ImGui::EndMenu();
 	}	
 
 	if (MenuItem("Debug")) debugFlag = !debugFlag;
@@ -431,38 +431,6 @@ void GUI::deleteGUI() {
 }
 
 
-void GUI::startRender(int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, int& rayCount, int& maxBounces) {
-	// backup viewport settings
-	viewWidth = width;
-	viewHeight = height;
-	viewRays = rayCount;
-	viewBounces = maxBounces;
-
-	// apply render settings
-	renderFlag = true;
-	lockedMovement = true;
-	changed = true;
-	width = renderWidth;
-	height = renderHeight;
-	rayCount = renderRays;
-	maxBounces = renderBounces;
-
-	if (renderCamFlag) {
-		// backup viewport cam settings
-		viewCamPos = cam.pos;
-		viewCamRot = cam.rotation;
-		viewCamFov = cam.fov;
-
-		// apply render cam settings
-		cam.pos = renderCamPos;
-		cam.rotation = renderCamRot;
-		cam.fov = renderCamFov;
-		cam.updateModel();
-		cam.updateFov();
-	}
-
-}
-
 bool GUI::editMaterial(Material* mat) {
 	bool changed = false;
 
@@ -514,6 +482,7 @@ bool GUI::editMaterial(Material* mat) {
 	return changed;
 }
 
+
 bool GUI::editSphere(Sphere* sphere, std::vector<Material> materials) {
 	bool changed = false;
 
@@ -539,4 +508,39 @@ bool GUI::editSphere(Sphere* sphere, std::vector<Material> materials) {
 	}
 
 	return changed;
+}
+
+
+void GUI::startRender(int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, int& rayCount, int& maxBounces) {
+	savePath = getSavePath();
+	if (savePath == "") return;
+
+	// backup viewport settings
+	viewWidth = width;
+	viewHeight = height;
+	viewRays = rayCount;
+	viewBounces = maxBounces;
+
+	// apply render settings
+	renderFlag = true;
+	lockedMovement = true;
+	changed = true;
+	width = renderWidth;
+	height = renderHeight;
+	rayCount = renderRays;
+	maxBounces = renderBounces;
+
+	if (renderCamFlag) {
+		// backup viewport cam settings
+		viewCamPos = cam.pos;
+		viewCamRot = cam.rotation;
+		viewCamFov = cam.fov;
+
+		// apply render cam settings
+		cam.pos = renderCamPos;
+		cam.rotation = renderCamRot;
+		cam.fov = renderCamFov;
+		cam.updateModel();
+		cam.updateFov();
+	}
 }
