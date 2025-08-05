@@ -1,4 +1,4 @@
-#version 450 core
+#version 420 core
 
 #define pi 3.1415926f
 

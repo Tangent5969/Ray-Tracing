@@ -62,11 +62,12 @@ private:
 
 };
 
-static void saveImage(const char* fileName, GLuint texture, int width, int height) {
-	std::vector<unsigned char> data(width * height * 3);
-	glGetTextureImage(texture, 0, GL_RGB, GL_UNSIGNED_BYTE, width * height * 3, data.data());
+static void saveImage(const char* fileName, int width, int height) {
+	void* data = malloc(width * height * 3);
+	glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
 	stbi_flip_vertically_on_write(true);
-	stbi_write_png(fileName, width, height, 3, data.data(), width * 3);
+	stbi_write_png(fileName, width, height, 3, data, width * 3);
+	free(data);
 }
 
 static int GCD(int x, int y) {

@@ -28,7 +28,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	if (renderFlag) {
 		// render finished
 		if (accumulationFrame >= renderFrames || IsKeyPressed(ImGuiKey_Escape)) {
-			saveImage("image.png", texture, width, height);
+			saveImage("image.png", width, height);
 			renderFlag = false;
 
 			// restore viewport settings
