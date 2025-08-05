@@ -3,16 +3,11 @@
 
 #include <glad/glad.h>
 
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
-
 class Shader {
 public:
 	GLuint program;
 
-	Shader(const char* vertexPath, const char* fragmentPath);
+	Shader(const char* vertexCode, const char* fragmentCode);
 	void use();
 	void deleteShader();
 };

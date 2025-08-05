@@ -2,6 +2,9 @@
 
 #include<iostream>
 
+// created at build
+#include "headers/ShaderStrings.h"
+
 // opengl headers
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
@@ -93,7 +96,7 @@ int main() {
 
 
 	// create shaders
-	Shader rayShader("./src/shaders/Default.vert", "./src/shaders/Ray.frag");
+	Shader rayShader(Default_vert, Ray_frag);
 	rayShader.use();
 	glUniform1i(glGetUniformLocation(rayShader.program, "text"), 0);
 
