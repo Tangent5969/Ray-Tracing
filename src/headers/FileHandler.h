@@ -174,6 +174,9 @@ static bool loadScene(std::string filePath, std::vector<Material>& materials, st
 	}
 
 	file.close();
+
+	if (fileMaterials.empty()) fileMaterials.push_back(Material{});
+
 	materials = fileMaterials;
 	spheres = fileSpheres;
 	return true;

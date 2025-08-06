@@ -1,0 +1,87 @@
+Materials: 6
+Spheres: 6
+
+Material: 0
+Colour: 1 1 1
+Light Strength: 0
+Light Colour: 0 0 0
+Smoothness: 0
+Gloss: 0
+Glass: 0
+Refraction: 1
+
+Material: 1
+Colour: 1 1 1
+Light Strength: 1
+Light Colour: 1 1 1
+Smoothness: 0
+Gloss: 0
+Glass: 0
+Refraction: 1
+
+Material: 2
+Colour: 1 0 0
+Light Strength: 0
+Light Colour: 0 0 0
+Smoothness: 0
+Gloss: 0
+Glass: 0
+Refraction: 1
+
+Material: 3
+Colour: 0 1 0
+Light Strength: 0
+Light Colour: 0 0 0
+Smoothness: 0
+Gloss: 0
+Glass: 0
+Refraction: 1
+
+Material: 4
+Colour: 0 0 1
+Light Strength: 0
+Light Colour: 0 0 0
+Smoothness: 0
+Gloss: 0
+Glass: 0
+Refraction: 1
+
+Material: 5
+Colour: 1 1 1
+Light Strength: 0
+Light Colour: 0 0 0
+Smoothness: 0.73
+Gloss: 0.238
+Glass: 0
+Refraction: 1
+
+Sphere: 0
+Position: 500 0 0
+Radius: 495
+Material: 2
+
+Sphere: 1
+Position: -500 0 0
+Radius: 495
+Material: 3
+
+Sphere: 2
+Position: 0 0 500
+Radius: 495
+Material: 4
+
+Sphere: 3
+Position: 0 0 -515
+Radius: 495
+Material: 0
+
+Sphere: 4
+Position: 0 -500 0
+Radius: 495
+Material: 5
+
+Sphere: 5
+Position: 0 500 0
+Radius: 495
+Material: 1
+

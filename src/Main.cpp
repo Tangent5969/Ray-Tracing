@@ -30,7 +30,7 @@ int height = 720;
 int oldWidth = width;
 int oldHeight = height;
 int rayCount = 3;
-int maxBounces = 25;
+int maxBounces = 5;
 float environmentLight = true;
 float prevX = 0.0f;
 float prevY = 0.0f;
@@ -121,6 +121,7 @@ int main() {
 
 	// contains scene data
 	std::vector<Material> materials;
+	materials.push_back(Material{});
 	std::vector<Sphere> spheres;
 
 	// initialize loop variables
