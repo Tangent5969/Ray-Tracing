@@ -31,7 +31,6 @@
     <ClCompile Include="src\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\UBO.cpp" />
     <ClCompile Include="src\Uniforms.cpp" />
@@ -45,6 +44,7 @@
   <ItemGroup>
     <ClInclude Include="src\headers\Camera.h" />
     <ClInclude Include="src\headers\FBO.h" />
+    <ClInclude Include="src\headers\FileHandler.h" />
     <ClInclude Include="src\headers\GUI.h" />
     <ClInclude Include="src\headers\Object.h" />
     <ClInclude Include="src\headers\Shader.h" />

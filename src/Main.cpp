@@ -119,10 +119,9 @@ int main() {
 	Uniforms uni;
 	uni.init(rayShader.program);
 
-	// get preset materials and spheres
-	std::vector<Material> materials = getMaterials();
-	std::vector<Sphere> spheres = getSpheres();
-
+	// contains scene data
+	std::vector<Material> materials;
+	std::vector<Sphere> spheres;
 
 	// initialize loop variables
 	float currentTime, dt;

@@ -4,14 +4,13 @@
 #include<stb/stb_image_write.h>
 #include<glad/glad.h>
 #include<glm/glm.hpp>
-#include<nfd/nfd.h>
-#include<windows.h>
 #include<vector>
 #include<string>
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include "FileHandler.h"
 #include "headers/Camera.h"
 #include "headers/Object.h"
 
@@ -63,43 +62,6 @@ private:
 	bool editSphere(Sphere* sphere, std::vector<Material> materials);
 	void startRender(int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, int& rayCount, int& maxBounces);
 };
-
-static std::string getSavePath() {
-	NFD_Init();
-	nfdchar_t* path;
-	std::string returnPath = "render.png";
-
-	// arguments
-	nfdsavedialogu8args_t args = {0};
-	nfdfilteritem_t filterList[1] = {{"image", "png"}};
-	args.filterList = filterList;
-	args.filterCount = 1;
-	args.defaultName = returnPath.c_str();
-
-	nfdresult_t result = NFD_SaveDialogU8_With(&path, &args);
-	if (result == NFD_OKAY) {
-		returnPath = path;
-		NFD_FreePath(path);
-	}
-	// closed or error
-	else returnPath = "";
-
-	NFD_Quit();
-	return returnPath;
-}
-
-static void saveImage(std::string filePath, int width, int height) {
-	void* data = malloc(width * height * 3);
-	glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, data);
-	stbi_flip_vertically_on_write(true);
-	stbi_write_png(filePath.c_str(), width, height, 3, data, width * 3);
-	free(data);
-
-	// opens image in default program if windows
-#ifdef _WIN32
-	ShellExecuteA(NULL, "open", filePath.c_str(), NULL, NULL, SW_SHOW);
-#endif
-}
 
 static int GCD(int x, int y) {
 	int z;

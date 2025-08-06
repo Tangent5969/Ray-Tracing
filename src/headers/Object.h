@@ -29,9 +29,4 @@ struct Sphere {
 	float pad3; // 4
 };
 
-
-std::vector<Material> getMaterials();
-std::vector<Sphere> getSpheres();
-
-
 #endif

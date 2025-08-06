@@ -17,6 +17,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	NewFrame();
+	ImGuiIO& io = GetIO();
 	//ShowDemoWindow();
 
 
@@ -49,7 +50,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 		}
 
 		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-		SetNextWindowSize(GetIO().DisplaySize);
+		SetNextWindowSize(io.DisplaySize);
 		SetNextWindowPos(ImVec2(0, 0));
 		if (Begin("Render", NULL, ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove)) {
 			viewSize = GetContentRegionAvail();
@@ -65,6 +66,23 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 
 	// main menu
 	BeginMainMenuBar();
+	if (BeginMenu("File")) {
+		if (MenuItem("Save")) {
+			std::string scenePath = getSavePath("scene.ray", 1);
+			if (scenePath != "") saveScene(scenePath, materials, spheres);
+		}
+		if (MenuItem("Open")) {
+			std::string scenePath = getLoadPath();
+			if (scenePath != "") {
+				if (loadScene(scenePath, materials, spheres)) {
+					changed = true;
+				}
+			}
+		}
+		ImGui::EndMenu();
+	}
+
+
 	if (BeginMenu("Render")) {
 		if (MenuItem("Start##Render")) {
 			startRender(width, height, lockedMovement, renderFlag, changed, cam, rayCount, maxBounces);
@@ -93,7 +111,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	if (MenuItem("Debug")) debugFlag = !debugFlag;
 	EndMainMenuBar();
 
-	ImVec2 windowSize = GetIO().DisplaySize;
+	ImVec2 windowSize = io.DisplaySize;
 	windowSize = ImVec2(windowSize.x, windowSize.y - GetFrameHeight());
 
 	// dock for nodes 
@@ -114,6 +132,20 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 			height = viewSize.y * scale;
 		}
 		Image((void*)(intptr_t)texture, ImVec2(viewSize[0], viewSize[1]), ImVec2(0, 1), ImVec2(1, 0));
+
+
+		// mouse position in viewport
+		/*
+		glm::vec2 viewportMouse = glm::vec2(-1);
+		if (io.MouseClicked[0]) {
+			viewportMouse = glm::vec2(io.MousePos.x - GetCursorScreenPos().x, -io.MousePos.y + GetCursorScreenPos().y);
+			viewportMouse.x = viewportMouse.x <= viewSize.x ? viewportMouse.x : -1;
+			viewportMouse.y = viewportMouse.y <= viewSize.y ? viewportMouse.y : -1;
+			if (viewportMouse.x >= 0 && viewportMouse.y >= 0) puts("in");
+			else puts("out");
+		}
+		*/
+
 	}
 	End();
 
@@ -512,7 +544,7 @@ bool GUI::editSphere(Sphere* sphere, std::vector<Material> materials) {
 
 
 void GUI::startRender(int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, int& rayCount, int& maxBounces) {
-	savePath = getSavePath();
+	savePath = getSavePath("render.png", 0);
 	if (savePath == "") return;
 
 	// backup viewport settings
