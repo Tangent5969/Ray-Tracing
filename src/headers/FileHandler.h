@@ -5,11 +5,8 @@
 #include<windows.h>
 #include<string>
 #include<vector>
-#include <fstream>
+#include<fstream>
 #include "headers/Object.h"
-
-#include <iostream>
-
 
 static void saveImage(std::string filePath, int width, int height) {
 	void* data = malloc(width * height * 3);
@@ -27,8 +24,10 @@ static void saveImage(std::string filePath, int width, int height) {
 
 static std::string getSavePath(std::string defaultPath, int mode) {
 	NFD_Init();
-	nfdchar_t* path;
+	nfdchar_t* path = 0;
 	nfdsavedialogu8args_t args = {0};
+	args.defaultName = defaultPath.c_str();
+	nfdresult_t result;
 
 	switch (mode) {
 		// image
@@ -36,6 +35,7 @@ static std::string getSavePath(std::string defaultPath, int mode) {
 		nfdfilteritem_t filterList[1] = {{"image", "png"}};
 		args.filterList = filterList;
 		args.filterCount = 1;
+		result = NFD_SaveDialogU8_With(&path, &args);
 		break;
 		}
 		
@@ -44,13 +44,12 @@ static std::string getSavePath(std::string defaultPath, int mode) {
 		nfdfilteritem_t filterList[1] = {{"scene", "ray"}};
 		args.filterList = filterList;
 		args.filterCount = 1;
+		result = NFD_SaveDialogU8_With(&path, &args);
 		break;
 		}
 	}
 	
-	args.defaultName = defaultPath.c_str();
 
-	nfdresult_t result = NFD_SaveDialogU8_With(&path, &args);
 	if (result == NFD_OKAY) {
 		defaultPath = path;
 		NFD_FreePath(path);
