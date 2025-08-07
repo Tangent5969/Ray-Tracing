@@ -1,6 +1,7 @@
 #version 420 core
 
 #define pi 3.1415926f
+#define epsilon 0.001f // prevents divide by 0
 
 #define maxSpheres 100
 #define maxMaterials 100
@@ -44,6 +45,14 @@ struct Sphere {
 	float pad3; // 4
 };
 
+struct Triangle {
+	vec3 posA;
+	vec3 posB;
+	vec3 posC;
+	int matIndex;
+
+};
+
 struct hitData {
 	bool didHit;
 	bool inside;
@@ -77,8 +86,45 @@ float randomNormalDist(inout uint seed) {
     return value * cos(angle);
 }
 
+// Möller–Trumbore
+hitData triangleIntersect(Ray ray, Triangle tri) {
+	hitData hit;
+	hit.didHit = false;
 
-hitData intersect(Ray ray, Sphere sphere) {
+	vec3 AB = tri.posB - tri.posA;
+	vec3 AC = tri.posC - tri.posA;
+	vec3 normal = cross(ray.dir, AC);
+	float det = dot(AB, normal);
+
+	// ray parralel to triangle
+	if (det < epsilon) return hit;
+
+	// cramers rule
+	vec3 AO = ray.origin - tri.posA;
+	float u = dot(AO, normal);
+	if (u < 0 || u > det) return hit;
+
+	vec3 AOxAB = cross(AO, AB);
+	float v = dot(ray.dir, AOxAB);
+	if (v < 0 || u + v > det) return hit;
+
+	// hit distance
+	float t = dot(AC, AOxAB);
+	// behind camera
+	if (t < epsilon) return hit;
+
+	u /= det;
+	v /= det;
+	t /= det;
+	
+	hit.didHit = true;
+	hit.dist = t;
+	hit.pos = ray.origin + (ray.dir * t);
+	hit.normal = normalize(normal * u + normal * v + (1.0f - u - v) * normal);
+	return hit;
+};
+
+hitData sphereIntersect(Ray ray, Sphere sphere) {
 	hitData hit;
 	hit.didHit = false;
 
@@ -91,11 +137,11 @@ hitData intersect(Ray ray, Sphere sphere) {
 	// any real roots
 	if (d >= 0.0f) {
 		float dist = b - sqrt(d);
-		// 0.001 sets clip distance and fixes banding
-		if (dist < 0.001f) { 
+		// epsilon sets clip distance and fixes banding
+		if (dist < epsilon) { 
 			dist = b + sqrt(d);
 			// missed
-			if (dist < 0.001f) return hit;
+			if (dist < epsilon) return hit;
 		}
 
 		// hit
@@ -121,9 +167,10 @@ hitData getCollision(Ray ray) {
 	hitData result;
 	result.didHit = false;
 	result.dist = 9999.0f;
+	hitData hit;
 
 	for (int i = 0; i < spheresLength; i++) {
-		hitData hit = intersect(ray, spheres[i]);
+		hit = sphereIntersect(ray, spheres[i]);
 		if (hit.didHit) {
 			if (hit.dist < result.dist) {
 				result = hit;
@@ -131,6 +178,11 @@ hitData getCollision(Ray ray) {
 			}
 		}
 	}
+
+	// add triangle detection
+
+
+
 	return result;
 };
 
@@ -235,8 +287,12 @@ void main() {
 	
 	vec3 totalLight = vec3(0);
 
+	Triangle tri = Triangle(vec3(0, 0, 1), vec3(2, 1, 3), vec3(1, 0, 2), 0);
+
+
 	for (int i = 0; i < rayCount; i++) {
 		totalLight += trace(ray, seed);
+		if (triangleIntersect(ray, tri).didHit) totalLight = vec3(1);
 	}
 	totalLight /= rayCount;
 
