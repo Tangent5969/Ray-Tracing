@@ -2,11 +2,13 @@
 #define FILEHANDLER_H
 
 #include<nfd/nfd.h>
+#include<tinyobjloader/tiny_obj_loader.h>
 #include<windows.h>
 #include<string>
 #include<vector>
 #include<fstream>
-#include "headers/Object.h"
+#include<iostream>
+#include"headers/Object.h"
 
 static void saveImage(std::string filePath, int width, int height) {
 	void* data = malloc(width * height * 3);
@@ -62,17 +64,35 @@ static std::string getSavePath(std::string defaultPath, int mode) {
 }
 
 
-static std::string getLoadPath() {
+static std::string getLoadPath(int mode) {
 	NFD_Init();
-	nfdchar_t* path;
+	nfdchar_t* path = 0;
 	std::string loadPath;
-
 	nfdopendialogu8args_t args = {0};
-	nfdfilteritem_t filterList[1] = {{"scene", "ray"}};
-	args.filterList = filterList;
-	args.filterCount = 1;
+	nfdresult_t result;
 
-	nfdresult_t result = NFD_OpenDialogU8_With(&path, &args);
+	switch (mode) {
+		// model
+	case 0: {
+		nfdfilteritem_t filterList[1] = {{"model", "obj"}};
+		args.filterList = filterList;
+		args.filterCount = 1;
+
+		result = NFD_OpenDialogU8_With(&path, &args);
+		break;
+	}
+
+		// scene
+	case 1: {
+		nfdfilteritem_t filterList[1] = {{"scene", "ray"}};
+		args.filterList = filterList;
+		args.filterCount = 1;
+
+		result = NFD_OpenDialogU8_With(&path, &args);
+		break;
+		}
+	}
+	
 	if (result == NFD_OKAY) {
 		loadPath = path;
 		NFD_FreePath(path);
@@ -178,6 +198,90 @@ static bool loadScene(std::string filePath, std::vector<Material>& materials, st
 
 	materials = fileMaterials;
 	spheres = fileSpheres;
+	return true;
+}
+
+static bool loadObj(std::string filePath, std::vector<Triangle>& triangles) {
+	tinyobj::ObjReaderConfig config;
+	tinyobj::ObjReader reader;
+
+
+
+	if (!reader.ParseFromFile(filePath, config)) {
+		if (!reader.Error().empty()) {
+			std::cerr << "TinyObjReader: " << reader.Error();
+		}
+		return false;
+	}
+
+	if (!reader.Warning().empty()) {
+		std::cout << "TinyObjReader: " << reader.Warning();
+	}
+
+
+
+
+	tinyobj::attrib_t attrib = reader.GetAttrib();
+	std::vector<tinyobj::shape_t> shapes = reader.GetShapes();
+
+	for (size_t s = 0; s < shapes.size(); s++) {
+		size_t offset = 0;
+
+		// loop over faces (triangles)
+		for (size_t face = 0; face < shapes[s].mesh.num_face_vertices.size(); face++) {
+			tinyobj::index_t index;
+			Triangle tri;
+
+
+			// vertex A
+			index = shapes[s].mesh.indices[offset];
+
+			tri.posA.x = attrib.vertices[3 * size_t(index.vertex_index)];
+			tri.posA.y = attrib.vertices[3 * size_t(index.vertex_index) + 1];
+			tri.posA.z = attrib.vertices[3 * size_t(index.vertex_index) + 2];
+
+			// no normal if negative
+			if (index.normal_index >= 0) {
+				tri.normA.x = attrib.normals[3 * size_t(index.normal_index)];
+				tri.normA.y = attrib.normals[3 * size_t(index.normal_index) + 1];
+				tri.normA.z = attrib.normals[3 * size_t(index.normal_index) + 2];
+			}
+
+
+			// vertex B
+			index = shapes[s].mesh.indices[offset + 1];
+
+			tri.posB.x = attrib.vertices[3 * size_t(index.vertex_index)];
+			tri.posB.y = attrib.vertices[3 * size_t(index.vertex_index) + 1];
+			tri.posB.z = attrib.vertices[3 * size_t(index.vertex_index) + 2];
+
+			// no normal if negative
+			if (index.normal_index >= 0) {
+				tri.normB.x = attrib.normals[3 * size_t(index.normal_index)];
+				tri.normB.y = attrib.normals[3 * size_t(index.normal_index) + 1];
+				tri.normB.z = attrib.normals[3 * size_t(index.normal_index) + 2];
+			}
+
+
+			// vertex C
+			index = shapes[s].mesh.indices[offset + 2];
+
+			tri.posC.x = attrib.vertices[3 * size_t(index.vertex_index)];
+			tri.posC.y = attrib.vertices[3 * size_t(index.vertex_index) + 1];
+			tri.posC.z = attrib.vertices[3 * size_t(index.vertex_index) + 2];
+
+			// no normal if negative
+			if (index.normal_index >= 0) {
+				tri.normC.x = attrib.normals[3 * size_t(index.normal_index)];
+				tri.normC.y = attrib.normals[3 * size_t(index.normal_index) + 1];
+				tri.normC.z = attrib.normals[3 * size_t(index.normal_index) + 2];
+			}
+
+			triangles.push_back(tri);
+			offset += 3;
+		}
+	}
+
 	return true;
 }
 

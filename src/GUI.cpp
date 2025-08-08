@@ -13,7 +13,7 @@ GUI::GUI(GLFWwindow* window) {
 }
 
 
-void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, float dt, int accumulationFrame, std::vector<Material>& materials, std::vector<Sphere>& spheres, int& rayCount, int& maxBounces, float& environmentLight) {
+void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, float dt, int accumulationFrame, std::vector<Material>& materials, std::vector<Sphere>& spheres, std::vector<Triangle>& triangles, int& rayCount, int& maxBounces, float& environmentLight) {
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	NewFrame();
@@ -72,7 +72,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 			if (scenePath != "") saveScene(scenePath, materials, spheres);
 		}
 		if (MenuItem("Open")) {
-			std::string scenePath = getLoadPath();
+			std::string scenePath = getLoadPath(1);
 			if (scenePath != "") {
 				if (loadScene(scenePath, materials, spheres)) {
 					changed = true;
@@ -97,7 +97,15 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	if (MenuItem("Camera")) cameraFlag = !cameraFlag;
 
 	if (BeginMenu("Objects")) {
-		if (MenuItem("New Object##Objects")) newSphereFlag = !newSphereFlag;
+		if (MenuItem("New Sphere##Objects")) newSphereFlag = !newSphereFlag;
+		if (MenuItem("Load Model##Objects")) {
+			std::string objectPath = getLoadPath(0);
+			if (objectPath != "") {
+				if (loadObj(objectPath, triangles)) {
+					changed = true;
+				}
+			}
+		}
 		if (MenuItem("Settings##Objects")) objectFlag = !objectFlag;
 		ImGui::EndMenu();
 	}
@@ -445,6 +453,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 		Text(" %.0f fps", 1.0f / dt);
 		Text(" %.2f ms", dt * 1000);
 		Text(" %i frames", accumulationFrame);
+		Text(" %i faces", triangles.size());
 		End();
 	}
 

@@ -29,4 +29,20 @@ struct Sphere {
 	float pad3; // 4
 };
 
+
+struct Triangle {
+	glm::vec3 posA;
+	float pad1;
+	glm::vec3 posB;
+	float pad2;
+	glm::vec3 posC;
+	float pad3;
+	glm::vec3 normA;
+	float pad4;
+	glm::vec3 normB;
+	float pad5;
+	glm::vec3 normC;
+	int matIndex = 0;
+};
+
 #endif

@@ -1,4 +1,4 @@
-#version 420 core
+#version 460 core
 
 #define pi 3.1415926f
 #define epsilon 0.001f // prevents divide by 0
@@ -47,8 +47,16 @@ struct Sphere {
 
 struct Triangle {
 	vec3 posA;
+	float pad1;
 	vec3 posB;
+	float pad2;
 	vec3 posC;
+	float pad3;
+	vec3 normA;
+	float pad4;
+	vec3 normB;
+	float pad5;
+	vec3 normC;
 	int matIndex;
 
 };
@@ -66,6 +74,10 @@ struct hitData {
 layout(std140) uniform objects {
 	Sphere spheres[maxSpheres];
 	Material materials[maxMaterials];
+};
+
+layout(std140, binding = 1) buffer ssbo {
+    Triangle triangles[];
 };
 
 
@@ -180,7 +192,15 @@ hitData getCollision(Ray ray) {
 	}
 
 	// add triangle detection
-
+	for (int i = 0; i < triangles.length(); i++) {
+		hit = triangleIntersect(ray, triangles[i]);
+		if (hit.didHit) {
+			if (hit.dist < result.dist) {
+				result = hit;
+				result.mat = materials[triangles[i].matIndex];
+			}
+		}
+	}
 
 
 	return result;
@@ -287,12 +307,8 @@ void main() {
 	
 	vec3 totalLight = vec3(0);
 
-	Triangle tri = Triangle(vec3(0, 0, 1), vec3(2, 1, 3), vec3(1, 0, 2), 0);
-
-
 	for (int i = 0; i < rayCount; i++) {
 		totalLight += trace(ray, seed);
-		if (triangleIntersect(ray, tri).didHit) totalLight = vec3(1);
 	}
 	totalLight /= rayCount;
 

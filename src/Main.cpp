@@ -1,4 +1,5 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#define TINYOBJLOADER_IMPLEMENTATION
 
 #include<iostream>
 
@@ -21,6 +22,8 @@
 #include "headers/UBO.h"
 #include "headers/Uniforms.h"
 #include "headers/FBO.h"
+#include "headers/SSBO.h"
+
 
 // globals
 int windowWidth = 1408;
@@ -54,7 +57,7 @@ int main() {
 	glfwInit();
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 
@@ -111,10 +114,12 @@ int main() {
 	FBO.unBind();
 
 	UBO UBO;
+	SSBO SSBO;
 
 	VAO.unBind();
 	VBO.unBind();
 	UBO.unBind();
+	SSBO.unBind();
 
 	Uniforms uni;
 	uni.init(rayShader.program);
@@ -123,6 +128,7 @@ int main() {
 	std::vector<Material> materials;
 	materials.push_back(Material{});
 	std::vector<Sphere> spheres;
+	std::vector<Triangle> triangles;
 
 	// initialize loop variables
 	float currentTime, dt;
@@ -173,16 +179,19 @@ int main() {
 		FBO.bind();
 		rayShader.use();
 
-		// uniforms
+		// GPU data
 		uni.update(rayCount, maxBounces, cam.pos, cam.model, width, height, cam.focus, spheres.size(), accumulationFrame, environmentLight);
 		UBO.bind();
 		UBO.build(rayShader.program, spheres, materials);
+		SSBO.bind();
+		SSBO.build(triangles);
+
 
 		VAO.bind();
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		// gui logic and image
-		gui.mainLoop(FBO.texture, width, height, lockedMovement, renderFlag, changed, cam, dt, accumulationFrame, materials, spheres, rayCount, maxBounces, environmentLight);
+		gui.mainLoop(FBO.texture, width, height, lockedMovement, renderFlag, changed, cam, dt, accumulationFrame, materials, spheres, triangles, rayCount, maxBounces, environmentLight);
 
 		FBO.unBind();
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -199,6 +208,7 @@ int main() {
 	VBO.deleteVBO();
 	FBO.deleteFBO();
 	UBO.deleteUBO();
+	SSBO.deleteSSBO();
 	rayShader.deleteShader();
 	gui.deleteGUI();
 

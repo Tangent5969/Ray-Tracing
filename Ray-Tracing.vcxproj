@@ -32,6 +32,7 @@
     <ClCompile Include="src\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\Shader.cpp" />
+    <ClCompile Include="src\SSBO.cpp" />
     <ClCompile Include="src\UBO.cpp" />
     <ClCompile Include="src\Uniforms.cpp" />
     <ClCompile Include="src\VAO.cpp" />
@@ -49,6 +50,7 @@
     <ClInclude Include="src\headers\Object.h" />
     <ClInclude Include="src\headers\Shader.h" />
     <ClInclude Include="src\headers\ShaderStrings.h" />
+    <ClInclude Include="src\headers\SSBO.h" />
     <ClInclude Include="src\headers\UBO.h" />
     <ClInclude Include="src\headers\Uniforms.h" />
     <ClInclude Include="src\headers\VAO.h" />

@@ -19,7 +19,7 @@ using namespace ImGui;
 class GUI {
 public:
 	GUI(GLFWwindow* window);
-	void mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, float dt, int accumulationFrame, std::vector<Material>& materials, std::vector<Sphere>& spheres, int& rayCount, int& maxBounces, float& environmentLight);
+	void mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, float dt, int accumulationFrame, std::vector<Material>& materials, std::vector<Sphere>& spheres, std::vector<Triangle>& triangles, int& rayCount, int& maxBounces, float& environmentLight);
 	void render();
 	void deleteGUI();
 
