@@ -7,7 +7,6 @@
 #include<string>
 #include<vector>
 #include<fstream>
-#include<iostream>
 #include"headers/Object.h"
 
 static void saveImage(std::string filePath, int width, int height) {
@@ -201,28 +200,18 @@ static bool loadScene(std::string filePath, std::vector<Material>& materials, st
 	return true;
 }
 
-static bool loadObj(std::string filePath, std::vector<Triangle>& triangles) {
+static bool loadModel(std::string filePath, std::vector<Model>& models, std::vector<ModelExtra>& modelExtras, std::vector<Triangle>& triangles) {
 	tinyobj::ObjReaderConfig config;
 	tinyobj::ObjReader reader;
 
-
-
 	if (!reader.ParseFromFile(filePath, config)) {
-		if (!reader.Error().empty()) {
-			std::cerr << "TinyObjReader: " << reader.Error();
-		}
 		return false;
 	}
 
-	if (!reader.Warning().empty()) {
-		std::cout << "TinyObjReader: " << reader.Warning();
-	}
-
-
-
-
 	tinyobj::attrib_t attrib = reader.GetAttrib();
 	std::vector<tinyobj::shape_t> shapes = reader.GetShapes();
+	Model model;
+	model.startIndex = triangles.size();
 
 	for (size_t s = 0; s < shapes.size(); s++) {
 		size_t offset = 0;
@@ -281,7 +270,10 @@ static bool loadObj(std::string filePath, std::vector<Triangle>& triangles) {
 			offset += 3;
 		}
 	}
-
+	
+	model.endIndex = triangles.size() - 1;
+	models.push_back(model);
+	modelExtras.push_back(ModelExtra{});
 	return true;
 }
 

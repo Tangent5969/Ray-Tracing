@@ -13,7 +13,10 @@ GUI::GUI(GLFWwindow* window) {
 }
 
 
-void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, float dt, int accumulationFrame, std::vector<Material>& materials, std::vector<Sphere>& spheres, std::vector<Triangle>& triangles, int& rayCount, int& maxBounces, float& environmentLight) {
+void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, float dt, int accumulationFrame, 
+	std::vector<Material>& materials, std::vector<Sphere>& spheres, std::vector<Model>& models, std::vector<ModelExtra>& modelExtras, std::vector<Triangle>& triangles, 
+	int& rayCount, int& maxBounces, float& environmentLight) {
+
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	NewFrame();
@@ -98,21 +101,15 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 
 	if (BeginMenu("Objects")) {
 		if (MenuItem("New Sphere##Objects")) newSphereFlag = !newSphereFlag;
-		if (MenuItem("Load Model##Objects")) {
-			std::string objectPath = getLoadPath(0);
-			if (objectPath != "") {
-				if (loadObj(objectPath, triangles)) {
-					changed = true;
-				}
-			}
-		}
-		if (MenuItem("Settings##Objects")) objectFlag = !objectFlag;
+		if (MenuItem("Edit Spheres##Objects")) editSpheresFlag = !editSpheresFlag;
+		if (MenuItem("New Model##Objects")) newModelFlag = !newModelFlag;
+		if (MenuItem("Edit Models##Objects")) editModelsFlag = !editModelsFlag;
 		ImGui::EndMenu();
 	}
 
 	if (BeginMenu("Materials")) {
 		if (MenuItem("New Material##Materials")) newMaterialFlag = !newMaterialFlag;
-		if (MenuItem("Settings##Materials")) materialFlag = !materialFlag;
+		if (MenuItem("Edit Materials##Materials")) editMaterialsFlag = !editMaterialsFlag;
 		ImGui::EndMenu();
 	}	
 
@@ -275,40 +272,40 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	if (cameraFlag) {
 		if (Begin("Camera", &cameraFlag, windowFlags)) {
 
-			SeparatorText("Camera Position");
-			if (DragFloat("Pos X", &cam.pos.x, 0.05)) {
+			SeparatorText("Camera Position##Camera");
+			if (DragFloat("Pos X##Camera", &cam.pos.x, 0.05)) {
 				changed = true;
 			}
-			if (DragFloat("Pos Y", &cam.pos.y, 0.05)) {
+			if (DragFloat("Pos Y##Camera", &cam.pos.y, 0.05)) {
 				changed = true;
 			}
-			if (DragFloat("Pos Z", &cam.pos.z, 0.05)) {
-				changed = true;
-			}
-
-			SeparatorText("Camera Direction");
-			if (SliderFloat("Pitch", &cam.rotation.y, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
-				cam.updateModel();
-				changed = true;
-			}
-			if (SliderFloat("Yaw", &cam.rotation.x, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
-				cam.updateModel();
-				changed = true;
-			}
-			if (SliderFloat("Roll", &cam.rotation.z, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
-				cam.updateModel();
+			if (DragFloat("Pos Z##Camera", &cam.pos.z, 0.05)) {
 				changed = true;
 			}
 
-			SeparatorText("Other");
-			if (SliderFloat("Fov", &cam.fov, 1, 180, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
+			SeparatorText("Camera Direction##Camera");
+			if (SliderFloat("Pitch##Camera", &cam.rotation.y, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+				cam.updateModel();
+				changed = true;
+			}
+			if (SliderFloat("Yaw##Camera", &cam.rotation.x, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+				cam.updateModel();
+				changed = true;
+			}
+			if (SliderFloat("Roll##Camera", &cam.rotation.z, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+				cam.updateModel();
+				changed = true;
+			}
+
+			SeparatorText("Other##Camera");
+			if (SliderFloat("Fov##Camera", &cam.fov, 1, 180, "%.0f", ImGuiSliderFlags_AlwaysClamp)) {
 				cam.updateFov();
 				changed = true;
 			}
-			if (DragFloat("Speed", &cam.moveSpeed, 0.05, 0.1, ImGuiSliderFlags_AlwaysClamp)) {
+			if (DragFloat("Speed##Camera", &cam.moveSpeed, 0.05, 0.1, ImGuiSliderFlags_AlwaysClamp)) {
 				if (cam.moveSpeed < 0.1f) cam.moveSpeed = 0.1f;
 			}
-			if (DragFloat("Sensitivity", &cam.sensitivity, 0.05, 0.1, ImGuiSliderFlags_AlwaysClamp)) {
+			if (DragFloat("Sensitivity##Camera", &cam.sensitivity, 0.05, 0.1, ImGuiSliderFlags_AlwaysClamp)) {
 				if (cam.sensitivity < 0.1f) cam.sensitivity = 0.1f;
 			}
 		}
@@ -316,8 +313,8 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 	}
 
 	// material customisation
-	if (materialFlag) {
-		if (Begin("Materials", &materialFlag, windowFlags)) {
+	if (editMaterialsFlag) {
+		if (Begin("Materials", &editMaterialsFlag, windowFlags)) {
 
 			// tree buttons
 			bool openAllMat = false, closeAllMat = false;
@@ -363,9 +360,9 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 		End();
 	}
 
-	// object customisation
-	if (objectFlag) {
-		if (Begin("Objects", &objectFlag, windowFlags)) {
+	// sphere customisation
+	if (editSpheresFlag) {
+		if (Begin("Spheres", &editSpheresFlag, windowFlags)) {
 
 			// tree buttons
 			bool openAllSphere = false, closeAllSphere = false;
@@ -422,7 +419,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 
 					// delete spheres
 					SeparatorText("Delete Sphere");
-					if (Button(("Delete##" + std::to_string(i)).c_str())) {
+					if (Button(("Delete##1" + std::to_string(i)).c_str())) {
 						spheres.erase(spheres.begin() + i);
 						changed = true;
 					}
@@ -441,6 +438,114 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 			if (Button("Add Sphere")) {
 				spheres.push_back(tempSphere);
 				changed = true;
+			}
+		}
+		End();
+	}
+
+	// model customisation
+	if (editModelsFlag) {
+		if (Begin("Models", &editModelsFlag, windowFlags)) {
+			// tree buttons
+			bool openAllModels = false, closeAllModels = false;
+			if (Button("Expand All##2")) {
+				openAllModels = true;
+			}
+			SameLine();
+			if (Button("Close All##2")) {
+				closeAllModels = true;
+			}
+
+			if (!newModelFlag) {
+				if (Button("New Model")) {
+					modelPath = "Select Model";
+					tempModel = Model{};
+					tempModelExtra = ModelExtra{};
+					newModelFlag = true;
+				}
+				SameLine();
+			}
+
+			// delete all models
+			if (!models.empty()) {
+				if (Button("Delete All##1")) {
+					OpenPopup("Delete?");
+				}
+
+				// pop up
+				SetNextWindowPos(GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+				if (BeginPopupModal("Delete?", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+					Text("Delete All Models?");
+					Separator();
+					if (Button("Confirm")) {
+						models.clear();
+						modelExtras.clear();
+						triangles.clear();
+						changed = true;
+						CloseCurrentPopup();
+					}
+					SameLine();
+					if (Button("Cancel")) {
+						CloseCurrentPopup();
+					}
+					EndPopup();
+				}
+			}
+
+
+			// list all models
+			for (int i = 0; i < models.size(); i++) {
+				if (openAllModels) SetNextItemOpen(true);
+				if (closeAllModels) SetNextItemOpen(false);
+
+				if (TreeNodeEx(("Model " + std::to_string(i)).c_str())) {
+					// edit model
+					Model* model = &models[i];
+					ModelExtra* extra = &modelExtras[i];
+					changed = editModel(model, extra, materials) || changed;
+
+					// delete models
+					SeparatorText("Delete Model");
+					if (Button(("Delete##2" + std::to_string(i)).c_str())) {
+						int modelSize = models[i].endIndex - models[i].startIndex + 1;
+						triangles.erase(triangles.begin() + models[i].startIndex, triangles.begin() + models[i].endIndex + 1);
+						models.erase(models.begin() + i);
+						modelExtras.erase(modelExtras.begin() + i);
+						for (int j = i; j < models.size(); j++) {
+							models[j].startIndex -= modelSize;
+							models[j].endIndex -= modelSize;
+						}
+						changed = true;
+					}
+					TreePop();
+				}
+			}
+
+		}
+		End();
+	}
+
+	// add new model
+	if (newModelFlag) {
+		if (Begin("New Model", &newModelFlag, windowFlags | ImGuiWindowFlags_NoDocking)) {
+			editModel(&tempModel, &tempModelExtra, materials);
+			Separator();
+
+			// gets model path
+			if (Button((modelPath + "##NewModel").c_str())) {
+				modelPath = getLoadPath(0);
+				if (modelPath == "") modelPath = "Select Model";
+			}
+			SetItemTooltip("Model Path (.obj)");
+
+			if (Button("Add Model")) {
+				if (loadModel(modelPath, models, modelExtras, triangles)) {
+					modelExtras[modelExtras.size() - 1] = tempModelExtra;
+					models[models.size() - 1].transform = tempModel.transform;
+					models[models.size() - 1].invTransform = tempModel.invTransform;
+					models[models.size() - 1].matIndex = tempModel.matIndex;
+					changed = true;
+				}
 			}
 		}
 		End();
@@ -545,6 +650,55 @@ bool GUI::editSphere(Sphere* sphere, std::vector<Material> materials) {
 	}
 
 	if (SliderInt("Material", &sphere->matIndex, 0, materials.size() - 1, "%i", ImGuiSliderFlags_AlwaysClamp)) {
+		changed = true;
+	}
+
+	return changed;
+}
+
+
+bool GUI::editModel(Model* model, ModelExtra* extra, std::vector<Material> materials) {
+	bool changed = false;
+
+	SeparatorText("Model Position##EditModel");
+	if (DragFloat("Pos X##EditModel", &extra->pos.x, 0.05)) {
+		model->setTransform(extra);
+		changed = true;
+	}
+	if (DragFloat("Pos Y##EditModel", &extra->pos.y, 0.05)) {
+		model->setTransform(extra);
+		changed = true;
+	}
+	if (DragFloat("Pos Z##EditModel", &extra->pos.z, 0.05)) {
+		model->setTransform(extra);
+		changed = true;
+	}
+
+	SeparatorText("Model Rotation##EditModel");
+	if (SliderFloat("Rotation X##EditModel", &extra->rotation.x, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+		model->setTransform(extra);
+		changed = true;
+	}
+	if (SliderFloat("Rotation Y##EditModel", &extra->rotation.y, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+		model->setTransform(extra);
+		changed = true;
+	}
+	if (SliderFloat("Rotation Z##EditModel", &extra->rotation.z, -180, 180, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+		model->setTransform(extra);
+		changed = true;
+	}
+
+	SeparatorText("Other##EditModel");
+	float modelScale = extra->scale.x;
+
+	if (DragFloat("Scale##EditModel", &modelScale, 0.05, 0.1)) {
+		if (modelScale < 0) modelScale = 0;
+		extra->scale = glm::vec3(modelScale);
+		model->setTransform(extra);
+		changed = true;
+	}
+
+	if (SliderInt("Material##EditModel", &model->matIndex, 0, materials.size() - 1, "%i", ImGuiSliderFlags_AlwaysClamp)) {
 		changed = true;
 	}
 

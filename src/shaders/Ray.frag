@@ -1,10 +1,10 @@
 #version 460 core
 
 #define pi 3.1415926f
-#define epsilon 0.001f // prevents divide by 0
 
 #define maxSpheres 100
 #define maxMaterials 100
+#define maxModels 100
 
 in vec2 texCoords;
 out vec4 FragColor;
@@ -16,6 +16,7 @@ uniform mat4 model;
 uniform vec2 res;
 uniform float focus;
 uniform int spheresLength;
+uniform int modelsLength;
 uniform sampler2D text;
 uniform int accumulationFrame;
 uniform bool environmentLightFlag;
@@ -57,8 +58,17 @@ struct Triangle {
 	vec3 normB;
 	float pad5;
 	vec3 normC;
-	int matIndex;
+	float pad6;
 
+};
+
+struct Model {
+	mat4 transform; // 64
+	mat4 invTransform; // 64
+	int matIndex; // 4
+	int startIndex; // 4
+	int endIndex; // 4
+	float pad; // 4
 };
 
 struct hitData {
@@ -74,6 +84,7 @@ struct hitData {
 layout(std140) uniform objects {
 	Sphere spheres[maxSpheres];
 	Material materials[maxMaterials];
+	Model models[maxModels];
 };
 
 layout(std140, binding = 1) buffer ssbo {
@@ -109,7 +120,7 @@ hitData triangleIntersect(Ray ray, Triangle tri) {
 	float det = dot(AB, normal);
 
 	// ray parralel to triangle
-	if (det < epsilon) return hit;
+	if (det < 0.0000001) return hit;
 
 	// cramers rule
 	vec3 AO = ray.origin - tri.posA;
@@ -123,7 +134,7 @@ hitData triangleIntersect(Ray ray, Triangle tri) {
 	// hit distance
 	float t = dot(AC, AOxAB);
 	// behind camera
-	if (t < epsilon) return hit;
+	if (t < 0.0000001) return hit;
 
 	u /= det;
 	v /= det;
@@ -149,11 +160,11 @@ hitData sphereIntersect(Ray ray, Sphere sphere) {
 	// any real roots
 	if (d >= 0.0f) {
 		float dist = b - sqrt(d);
-		// epsilon sets clip distance and fixes banding
-		if (dist < epsilon) { 
+		// 0.001 sets clip distance and fixes banding
+		if (dist < 0.001) { 
 			dist = b + sqrt(d);
 			// missed
-			if (dist < epsilon) return hit;
+			if (dist < 0.001) return hit;
 		}
 
 		// hit
@@ -181,6 +192,7 @@ hitData getCollision(Ray ray) {
 	result.dist = 9999.0f;
 	hitData hit;
 
+	// sphere intersections
 	for (int i = 0; i < spheresLength; i++) {
 		hit = sphereIntersect(ray, spheres[i]);
 		if (hit.didHit) {
@@ -191,17 +203,30 @@ hitData getCollision(Ray ray) {
 		}
 	}
 
-	// add triangle detection
-	for (int i = 0; i < triangles.length(); i++) {
-		hit = triangleIntersect(ray, triangles[i]);
-		if (hit.didHit) {
-			if (hit.dist < result.dist) {
-				result = hit;
-				result.mat = materials[triangles[i].matIndex];
+		// triangle intersections
+	for (int i = 0; i < modelsLength; i++) {
+		Model model = models[i];
+
+		// transform ray to model space
+		vec3 originalOrigin = ray.origin;
+		vec3 originalDir = ray.dir;
+		ray.origin = (model.invTransform * vec4(ray.origin, 1.0f)).xyz;
+		ray.dir = (model.invTransform * vec4(ray.dir, 0.0f)).xyz;
+
+		for (int t = model.startIndex; t <= model.endIndex; t++) {
+			hit = triangleIntersect(ray, triangles[t]);
+			if (hit.didHit) {
+				if (hit.dist < result.dist) {
+					result = hit;
+					result.mat = materials[model.matIndex];
+				}
 			}
 		}
-	}
 
+		// transform ray back to world space
+		result.pos = originalOrigin + originalDir * result.dist;
+		ray.dir = (model.transform * vec4(ray.dir, 1.0f)).xyz;
+	}
 
 	return result;
 };

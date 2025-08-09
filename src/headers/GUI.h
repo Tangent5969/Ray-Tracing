@@ -19,18 +19,23 @@ using namespace ImGui;
 class GUI {
 public:
 	GUI(GLFWwindow* window);
-	void mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, float dt, int accumulationFrame, std::vector<Material>& materials, std::vector<Sphere>& spheres, std::vector<Triangle>& triangles, int& rayCount, int& maxBounces, float& environmentLight);
+	void mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, float dt, int accumulationFrame, 
+		std::vector<Material>& materials, std::vector<Sphere>& spheres, std::vector<Model>& models, std::vector<ModelExtra>& modelExtras, std::vector<Triangle>& triangles, 
+		int& rayCount, int& maxBounces, float& environmentLight);
+
 	void render();
 	void deleteGUI();
 
 private:
 	bool renderSettingsFlag = false;
 	bool cameraFlag = false;
-	bool objectFlag = false;
-	bool materialFlag = false;
+	bool editSpheresFlag = false;
+	bool editModelsFlag = false;
+	bool editMaterialsFlag = false;
 	bool debugFlag = false;
 	bool newMaterialFlag = false;
 	bool newSphereFlag = false;
+	bool newModelFlag = false;
 	bool matchResolutionFlag = true;
 
 	// render settings
@@ -56,10 +61,15 @@ private:
 	float scale = 1;
 	Material tempMaterial;
 	Sphere tempSphere;
+	Model tempModel;
+	ModelExtra tempModelExtra;
 	std::string savePath;
+	std::string modelPath = "Select Model";
 
 	bool editMaterial(Material* mat);
 	bool editSphere(Sphere* sphere, std::vector<Material> materials);
+	bool editModel(Model* model, ModelExtra* Extra, std::vector<Material> materials);
+
 	void startRender(int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, int& rayCount, int& maxBounces);
 };
 

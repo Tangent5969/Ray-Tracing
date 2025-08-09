@@ -128,6 +128,8 @@ int main() {
 	std::vector<Material> materials;
 	materials.push_back(Material{});
 	std::vector<Sphere> spheres;
+	std::vector<Model> models;
+	std::vector<ModelExtra> modelExtras;
 	std::vector<Triangle> triangles;
 
 	// initialize loop variables
@@ -180,9 +182,9 @@ int main() {
 		rayShader.use();
 
 		// GPU data
-		uni.update(rayCount, maxBounces, cam.pos, cam.model, width, height, cam.focus, spheres.size(), accumulationFrame, environmentLight);
+		uni.update(rayCount, maxBounces, cam.pos, cam.model, width, height, cam.focus, spheres.size(), models.size(), accumulationFrame, environmentLight);
 		UBO.bind();
-		UBO.build(rayShader.program, spheres, materials);
+		UBO.build(rayShader.program, spheres, materials, models);
 		SSBO.bind();
 		SSBO.build(triangles);
 
@@ -191,7 +193,8 @@ int main() {
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		// gui logic and image
-		gui.mainLoop(FBO.texture, width, height, lockedMovement, renderFlag, changed, cam, dt, accumulationFrame, materials, spheres, triangles, rayCount, maxBounces, environmentLight);
+		gui.mainLoop(FBO.texture, width, height, lockedMovement, renderFlag, changed, cam, dt, accumulationFrame, materials, spheres, models, modelExtras, 
+			triangles, rayCount, maxBounces, environmentLight);
 
 		FBO.unBind();
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
