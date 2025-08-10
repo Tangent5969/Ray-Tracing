@@ -20,7 +20,6 @@
 #include "headers/Camera.h"
 #include "headers/Object.h"
 #include "headers/UBO.h"
-#include "headers/Uniforms.h"
 #include "headers/FBO.h"
 #include "headers/SSBO.h"
 
@@ -121,9 +120,6 @@ int main() {
 	UBO.unBind();
 	SSBO.unBind();
 
-	Uniforms uni;
-	uni.init(rayShader.program);
-
 	// contains scene data
 	std::vector<Material> materials;
 	materials.push_back(Material{});
@@ -182,9 +178,9 @@ int main() {
 		rayShader.use();
 
 		// GPU data
-		uni.update(rayCount, maxBounces, cam.pos, cam.model, width, height, cam.focus, spheres.size(), models.size(), accumulationFrame, environmentLight);
+		UBO::Uniforms uni {cam.model, cam.pos, cam.focus, width, height, maxBounces, rayCount, spheres.size(), models.size(), accumulationFrame, environmentLight};
 		UBO.bind();
-		UBO.build(rayShader.program, spheres, materials, models);
+		UBO.build(rayShader.program, uni, spheres, materials, models);
 		SSBO.bind();
 		SSBO.build(triangles);
 
@@ -192,7 +188,7 @@ int main() {
 		VAO.bind();
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
-		// gui logic and image
+		// gui logic
 		gui.mainLoop(FBO.texture, width, height, lockedMovement, renderFlag, changed, cam, dt, accumulationFrame, materials, spheres, models, modelExtras, 
 			triangles, rayCount, maxBounces, environmentLight);
 
@@ -200,7 +196,6 @@ int main() {
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		// imgui
 		gui.render();
 
 		glfwSwapBuffers(window);

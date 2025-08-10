@@ -8,18 +8,7 @@
 
 in vec2 texCoords;
 out vec4 FragColor;
-
-uniform int rayCount;
-uniform int maxBounces;
-uniform vec3 camPos;
-uniform mat4 model;
-uniform vec2 res;
-uniform float focus;
-uniform int spheresLength;
-uniform int modelsLength;
 uniform sampler2D text;
-uniform int accumulationFrame;
-uniform bool environmentLightFlag;
 
 struct Ray {
 	vec3 origin;
@@ -47,19 +36,18 @@ struct Sphere {
 };
 
 struct Triangle {
-	vec3 posA;
-	float pad1;
-	vec3 posB;
-	float pad2;
-	vec3 posC;
-	float pad3;
-	vec3 normA;
-	float pad4;
-	vec3 normB;
-	float pad5;
-	vec3 normC;
-	float pad6;
-
+	vec3 posA; // 12
+	float pad1; // 4
+	vec3 posB; // 12
+	float pad2; // 4
+	vec3 posC; // 12
+	float pad3; // 4
+	vec3 normA; // 12
+	float pad4; // 4
+	vec3 normB; // 12
+	float pad5; // 4
+	vec3 normC;// 12
+	float pad6; // 4
 };
 
 struct Model {
@@ -81,7 +69,18 @@ struct hitData {
 };
 
 
-layout(std140) uniform objects {
+layout(std140) uniform bindPoint {
+	mat4 model; // 64
+	vec3 camPos; // 12
+	float focus; // 4
+	vec2 res; // 8
+	int maxBounces; // 4
+	int rayCount; // 4
+	int spheresLength; // 4
+	int modelsLength; // 4
+	int accumulationFrame; // 4
+	bool environmentLightFlag; // 4
+
 	Sphere spheres[maxSpheres];
 	Material materials[maxMaterials];
 	Model models[maxModels];

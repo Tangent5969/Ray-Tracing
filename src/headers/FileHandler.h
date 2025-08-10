@@ -3,7 +3,6 @@
 
 #include<nfd/nfd.h>
 #include<tinyobjloader/tiny_obj_loader.h>
-#include<windows.h>
 #include<string>
 #include<vector>
 #include<fstream>
@@ -16,10 +15,8 @@ static void saveImage(std::string filePath, int width, int height) {
 	stbi_write_png(filePath.c_str(), width, height, 3, data, width * 3);
 	free(data);
 
-	// opens image in default program if windows
-#ifdef _WIN32
-	ShellExecuteA(NULL, "open", filePath.c_str(), NULL, NULL, SW_SHOW);
-#endif
+	// opens image in default program
+	std::system(filePath.c_str());
 }
 
 
@@ -54,7 +51,18 @@ static std::string getSavePath(std::string defaultPath, int mode) {
 	if (result == NFD_OKAY) {
 		defaultPath = path;
 		NFD_FreePath(path);
+
+		switch (mode) {
+		case 0:
+			if (defaultPath.substr(defaultPath.find_last_of(".")) != ".png") defaultPath += ".png";
+			break;
+		case 1:
+			if (defaultPath.substr(defaultPath.find_last_of(".")) != ".ray") defaultPath += ".ray";
+			break;
+		}
+
 	}
+
 	// closed or error
 	else defaultPath = "";
 

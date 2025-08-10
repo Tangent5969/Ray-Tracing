@@ -37,18 +37,18 @@ struct Sphere {
 
 
 struct Triangle {
-	glm::vec3 posA;
-	float pad1;
-	glm::vec3 posB;
-	float pad2;
-	glm::vec3 posC;
-	float pad3;
-	glm::vec3 normA;
-	float pad4;
-	glm::vec3 normB;
-	float pad5;
-	glm::vec3 normC;
-	float pad6;
+	glm::vec3 posA; // 12
+	float pad1; // 4
+	glm::vec3 posB; // 12
+	float pad2; // 4
+	glm::vec3 posC; // 12
+	float pad3; // 4
+	glm::vec3 normA; // 12
+	float pad4; // 4
+	glm::vec3 normB; // 12
+	float pad5; // 4
+	glm::vec3 normC; // 12
+	float pad6; // 4
 };
 
 
