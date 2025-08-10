@@ -143,7 +143,10 @@ hitData triangleIntersect(Ray ray, Triangle tri) {
 	hit.didHit = true;
 	hit.dist = t;
 	hit.pos = ray.origin + (ray.dir * t);
-	hit.normal = normalize(normal * u + normal * v + (1.0f - u - v) * normal);
+	//hit.normal = normalize(tri.normA * u + tri.normB * v + (1.0f - u - v) * tri.normC);
+	hit.normal = normalize((1.0f - u - v) * tri.normA + u * tri.normB + v * tri.normC);
+
+
 	return hit;
 };
 
@@ -203,30 +206,36 @@ hitData getCollision(Ray ray) {
 		}
 	}
 
-		// triangle intersections
+	// save ray to restore from model space
+	vec3 originalOrigin = ray.origin;
+	vec3 originalDir = ray.dir;
+
+		// model (triangle) intersections
 	for (int i = 0; i < modelsLength; i++) {
 		Model model = models[i];
 
 		// transform ray to model space
-		vec3 originalOrigin = ray.origin;
-		vec3 originalDir = ray.dir;
-		ray.origin = (model.invTransform * vec4(ray.origin, 1.0f)).xyz;
-		ray.dir = (model.invTransform * vec4(ray.dir, 0.0f)).xyz;
+		ray.origin = (model.invTransform * vec4(originalOrigin, 1.0f)).xyz;
+		ray.dir = (model.invTransform * vec4(originalDir, 0.0f)).xyz;
 
 		for (int t = model.startIndex; t <= model.endIndex; t++) {
 			hit = triangleIntersect(ray, triangles[t]);
 			if (hit.didHit) {
 				if (hit.dist < result.dist) {
 					result = hit;
+
+					// transform result to world space
+					result.pos = originalOrigin + originalDir * result.dist;
+					result.normal = normalize((model.transform * vec4(hit.normal, 0.0f)).xyz);
+
 					result.mat = materials[model.matIndex];
 				}
 			}
 		}
-
-		// transform ray back to world space
-		result.pos = originalOrigin + originalDir * result.dist;
-		ray.dir = (model.transform * vec4(ray.dir, 1.0f)).xyz;
 	}
+
+	// restore ray back to world space
+	ray.dir = originalDir;
 
 	return result;
 };
