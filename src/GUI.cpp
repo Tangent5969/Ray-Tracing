@@ -15,7 +15,7 @@ GUI::GUI(GLFWwindow* window) {
 
 void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, float dt, int accumulationFrame, 
 	std::vector<Material>& materials, std::vector<Sphere>& spheres, std::vector<Model>& models, std::vector<ModelExtra>& modelExtras, std::vector<Triangle>& triangles, 
-	int& rayCount, int& maxBounces, float& environmentLight) {
+	std::vector<BVHNode>& nodes, std::vector<int>& nodeTriIndex, int& rayCount, int& maxBounces, float& environmentLight) {
 
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
@@ -481,6 +481,8 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 						models.clear();
 						modelExtras.clear();
 						triangles.clear();
+						nodes.clear();
+						nodeTriIndex.clear();
 						changed = true;
 						CloseCurrentPopup();
 					}
@@ -507,6 +509,9 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 					// delete models
 					SeparatorText("Delete Model");
 					if (Button(("Delete##2" + std::to_string(i)).c_str())) {
+						int bvhDiff = i == models.size() - 1 ? 0 : models[i + 1].BVHIndex - models[i].BVHIndex;
+						deleteBVH(models[i].BVHIndex, bvhDiff == 0 ? -1 : models[i + 1].BVHIndex, nodes, nodeTriIndex);
+
 						int modelSize = models[i].endIndex - models[i].startIndex + 1;
 						triangles.erase(triangles.begin() + models[i].startIndex, triangles.begin() + models[i].endIndex + 1);
 						models.erase(models.begin() + i);
@@ -514,6 +519,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 						for (int j = i; j < models.size(); j++) {
 							models[j].startIndex -= modelSize;
 							models[j].endIndex -= modelSize;
+							models[j].BVHIndex -= bvhDiff;
 						}
 						changed = true;
 					}
@@ -540,6 +546,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 
 			if (Button("Add Model")) {
 				if (loadModel(modelPath, models, modelExtras, triangles)) {
+					addBVH(models[models.size() - 1], nodes, nodeTriIndex, triangles);
 					modelExtras[modelExtras.size() - 1] = tempModelExtra;
 					models[models.size() - 1].transform = tempModel.transform;
 					models[models.size() - 1].invTransform = tempModel.invTransform;
@@ -559,6 +566,7 @@ void GUI::mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement
 		Text(" %.2f ms", dt * 1000);
 		Text(" %i frames", accumulationFrame);
 		Text(" %i faces", triangles.size());
+		Text(" %i nodes", nodes.size());
 		End();
 	}
 

@@ -56,7 +56,18 @@ struct Model {
 	int matIndex; // 4
 	int startIndex; // 4
 	int endIndex; // 4
-	float pad; // 4
+	float BVHIndex; // 4
+};
+
+struct BVHNode {
+	vec3 min; // 12
+	int leftIndex; // 4
+	vec3 max; // 12
+	int startIndex; // 4
+	int triCount; // 4
+	float pad1; // 4
+	float pad2; // 4
+	float pad3; // 4
 };
 
 struct hitData {
@@ -86,8 +97,16 @@ layout(std140) uniform bindPoint {
 	Model models[maxModels];
 };
 
-layout(std140, binding = 1) buffer ssbo {
+layout(std140, binding = 1) buffer triangleSSBO {
     Triangle triangles[];
+};
+
+layout(std140, binding = 2) buffer nodeSSBO {
+    BVHNode nodes[];
+};
+
+layout(std140, binding = 3) buffer triIndexSSBO {
+    int nodeTriIndex[];
 };
 
 
@@ -117,6 +136,7 @@ hitData triangleIntersect(Ray ray, Triangle tri) {
 	vec3 AC = tri.posC - tri.posA;
 	vec3 normal = cross(ray.dir, AC);
 	float det = dot(AB, normal);
+	float invDet = 1.0f / det;
 
 	// ray parralel to triangle
 	if (det < 0.0000001) return hit;
@@ -135,9 +155,9 @@ hitData triangleIntersect(Ray ray, Triangle tri) {
 	// behind camera
 	if (t < 0.0000001) return hit;
 
-	u /= det;
-	v /= det;
-	t /= det;
+	u *= invDet;
+	v *= invDet;
+	t *= invDet;
 	
 	hit.didHit = true;
 	hit.dist = t;

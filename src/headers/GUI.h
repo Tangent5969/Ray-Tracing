@@ -13,6 +13,7 @@
 #include "FileHandler.h"
 #include "headers/Camera.h"
 #include "headers/Object.h"
+#include "headers/BVH.h"
 
 using namespace ImGui;
 
@@ -21,7 +22,7 @@ public:
 	GUI(GLFWwindow* window);
 	void mainLoop(GLuint texture, int& width, int& height, bool& lockedMovement, bool& renderFlag, bool& changed, Camera& cam, float dt, int accumulationFrame, 
 		std::vector<Material>& materials, std::vector<Sphere>& spheres, std::vector<Model>& models, std::vector<ModelExtra>& modelExtras, std::vector<Triangle>& triangles, 
-		int& rayCount, int& maxBounces, float& environmentLight);
+		std::vector<BVHNode>& nodes, std::vector<int>& nodeTriIndex, int& rayCount, int& maxBounces, float& environmentLight);
 
 	void render();
 	void deleteGUI();

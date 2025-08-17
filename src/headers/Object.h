@@ -66,7 +66,7 @@ struct Model {
 	int matIndex = 0; // 4
 	int startIndex; // 4
 	int endIndex; // 4
-	float pad; // 4
+	int BVHIndex; // 4
 
 	void setTransform(ModelExtra data) {
 		glm::mat3 rotateX = glm::rotate(glm::mat4(1.0), glm::radians(-data.rotation.x), originalUp);

@@ -22,6 +22,7 @@
 #include "headers/UBO.h"
 #include "headers/FBO.h"
 #include "headers/SSBO.h"
+#include "headers/BVH.h"
 
 
 // globals
@@ -33,6 +34,7 @@ int oldWidth = width;
 int oldHeight = height;
 int rayCount = 3;
 int maxBounces = 5;
+int oldTriSize = 0;
 float environmentLight = true;
 float prevX = 0.0f;
 float prevY = 0.0f;
@@ -113,12 +115,18 @@ int main() {
 	FBO.unBind();
 
 	UBO UBO;
-	SSBO SSBO;
+	SSBO triSSBO;
+	triSSBO.unBind();
+	SSBO nodeSSBO;
+	nodeSSBO.unBind();
+	SSBO triIndexSSBO;
+	triIndexSSBO.unBind();
+
 
 	VAO.unBind();
 	VBO.unBind();
 	UBO.unBind();
-	SSBO.unBind();
+
 
 	// contains scene data
 	std::vector<Material> materials;
@@ -127,6 +135,8 @@ int main() {
 	std::vector<Model> models;
 	std::vector<ModelExtra> modelExtras;
 	std::vector<Triangle> triangles;
+	std::vector<BVHNode> nodes;
+	std::vector<int> nodeTriIndex;
 
 	// initialize loop variables
 	float currentTime, dt;
@@ -181,8 +191,19 @@ int main() {
 		UBO::Uniforms uni {cam.model, cam.pos, cam.focus, width, height, maxBounces, rayCount, spheres.size(), models.size(), accumulationFrame, environmentLight};
 		UBO.bind();
 		UBO.build(rayShader.program, uni, spheres, materials, models);
-		SSBO.bind();
-		SSBO.build(triangles);
+
+		// SSBO data
+		if (triangles.size() != oldTriSize) {
+			oldTriSize = triangles.size();
+			triSSBO.bind();
+			triSSBO.buildTriangle(triangles);
+			nodeSSBO.bind();
+			nodeSSBO.buildNodes(nodes);
+			triIndexSSBO.bind();
+			triIndexSSBO.buildTriIndex(nodeTriIndex);
+			triIndexSSBO.unBind();
+		}
+		
 
 
 		VAO.bind();
@@ -190,7 +211,7 @@ int main() {
 
 		// gui logic
 		gui.mainLoop(FBO.texture, width, height, lockedMovement, renderFlag, changed, cam, dt, accumulationFrame, materials, spheres, models, modelExtras, 
-			triangles, rayCount, maxBounces, environmentLight);
+			triangles, nodes, nodeTriIndex, rayCount, maxBounces, environmentLight);
 
 		FBO.unBind();
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -206,7 +227,9 @@ int main() {
 	VBO.deleteVBO();
 	FBO.deleteFBO();
 	UBO.deleteUBO();
-	SSBO.deleteSSBO();
+	triSSBO.deleteSSBO();
+	nodeSSBO.deleteSSBO();
+	triIndexSSBO.deleteSSBO();
 	rayShader.deleteShader();
 	gui.deleteGUI();
 
