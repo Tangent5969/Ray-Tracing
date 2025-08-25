@@ -5,6 +5,9 @@
 #define maxSpheres 100
 #define maxMaterials 100
 #define maxModels 100
+#define BVHStackSize 32
+
+vec4 debugValues = vec4(0);
 
 in vec2 texCoords;
 out vec4 FragColor;
@@ -13,6 +16,7 @@ uniform sampler2D text;
 struct Ray {
 	vec3 origin;
 	vec3 dir;
+	vec3 invDir;
 };
 
 struct Material {
@@ -56,14 +60,14 @@ struct Model {
 	int matIndex; // 4
 	int startIndex; // 4
 	int endIndex; // 4
-	float BVHIndex; // 4
+	int BVHIndex; // 4
 };
 
 struct BVHNode {
 	vec3 min; // 12
 	int leftIndex; // 4
 	vec3 max; // 12
-	int startIndex; // 4
+	int triIndex; // 4
 	int triCount; // 4
 	float pad1; // 4
 	float pad2; // 4
@@ -105,7 +109,7 @@ layout(std140, binding = 2) buffer nodeSSBO {
     BVHNode nodes[];
 };
 
-layout(std140, binding = 3) buffer triIndexSSBO {
+layout(std430, binding = 3) buffer triIndexSSBO {
     int nodeTriIndex[];
 };
 
@@ -207,6 +211,62 @@ hitData sphereIntersect(Ray ray, Sphere sphere) {
 	return hit;
 };
 
+// slab method
+// https://tavianator.com/2022/ray_box_boundary.html
+bool aabbIntersect(Ray ray, vec3 aabbMin, vec3 aabbMax) {
+	float tmin = 0.0f;
+	float tmax = 9999.0f;
+	for (int d = 0; d < 3; d++) {
+        float t1 = (aabbMin[d] - ray.origin[d]) * ray.invDir[d];
+        float t2 = (aabbMax[d] - ray.origin[d]) * ray.invDir[d];
+
+        tmin = max(tmin, min(min(t1, t2), tmax));
+        tmax = min(tmax, max(max(t1, t2), tmin));
+    }
+    return tmin < tmax;
+};
+
+hitData bvhIntersect(Ray ray, Model model) {
+	hitData result;
+	result.didHit = false;
+	result.dist = 9999.0f;
+	int stack[BVHStackSize];
+	int index = 1;
+
+	// root node
+	stack[0] = model.BVHIndex;
+	while (index > 0) {
+		BVHNode node = nodes[stack[index - 1]];
+		index--;
+		
+		// node intersections
+		if (aabbIntersect(ray, node.min, node.max)) {
+			debugValues++;
+
+			// leaf node
+			if (node.triCount > 0) {
+				
+				// triangle intersections
+				for (int i = node.triIndex; i < node.triIndex + node.triCount; i++) {
+					hitData hit = triangleIntersect(ray, triangles[nodeTriIndex[i]]);
+					if (hit.didHit) {
+						if (hit.dist < result.dist) result = hit;
+					}
+				}
+			}
+			else {
+				stack[index] = node.leftIndex + 1;
+				index++;
+				stack[index] = node.leftIndex;
+				index++;
+			}
+		}
+	}
+
+
+	return result;
+};
+
 
 hitData getCollision(Ray ray) {
 	hitData result;
@@ -229,7 +289,34 @@ hitData getCollision(Ray ray) {
 	vec3 originalOrigin = ray.origin;
 	vec3 originalDir = ray.dir;
 
-		// model (triangle) intersections
+
+	// model (bvh & triangle) intersections
+	for (int i = 0; i < modelsLength; i++) {
+		Model model = models[i];
+
+		// transform ray to model space
+		ray.origin = (model.invTransform * vec4(originalOrigin, 1.0f)).xyz;
+		ray.dir = (model.invTransform * vec4(originalDir, 0.0f)).xyz;
+		ray.invDir = 1.0f / ray.dir;
+
+		hit = bvhIntersect(ray, model);
+		if (hit.dist < result.dist) {
+			result = hit;
+
+			// transform result to world space
+			result.pos = originalOrigin + originalDir * result.dist;
+			result.normal = normalize((model.transform * vec4(hit.normal, 0.0f)).xyz);
+
+			result.mat = materials[model.matIndex];
+		}
+	}
+
+	// restore ray back to world space
+	ray.dir = originalDir;
+
+	/*
+	
+	// model (triangle) intersections
 	for (int i = 0; i < modelsLength; i++) {
 		Model model = models[i];
 
@@ -252,9 +339,11 @@ hitData getCollision(Ray ray) {
 			}
 		}
 	}
+	
 
 	// restore ray back to world space
 	ray.dir = originalDir;
+	*/
 
 	return result;
 };
@@ -370,5 +459,6 @@ void main() {
 	totalLight = (1.0f - weight) * texture(text, texCoords).xyz + totalLight * weight;
 	
 	// final output color
-	FragColor = vec4(totalLight, 1.0f);
+	//FragColor = vec4(totalLight, 1.0f);
+	FragColor = debugValues / 100.0f;
 };

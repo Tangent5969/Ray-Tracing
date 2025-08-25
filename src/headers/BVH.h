@@ -4,11 +4,13 @@
 #include "Object.h"
 #include <iostream>
 
+#define BVHStackSize 32
+
 struct BVHNode {
 	glm::vec3 min; // 12
 	int leftIndex = 0; // 4
 	glm::vec3 max; // 12
-	int startIndex; // 4
+	int triIndex; // 4
 	int triCount; // 4
 	float pad1; // 4
 	float pad2; // 4
@@ -28,7 +30,7 @@ private:
 	std::vector<Triangle> modelTriangles;
 
 	void updateAABB(int index);
-	void subdivide(int index);
+	void split(int index, int depth);
 
 };
 
@@ -39,7 +41,7 @@ static void addBVH(Model& model, std::vector<BVHNode>& nodes, std::vector<int>& 
 
 	for (BVHNode& node : bvh.nodes) {
 		node.leftIndex += model.BVHIndex;
-		node.startIndex += triSize;
+		node.triIndex += triSize;
 		nodes.push_back(node);
 	}
 	for (int i = 0; i < bvh.BVHTriangles.size(); i++) {
@@ -50,19 +52,19 @@ static void addBVH(Model& model, std::vector<BVHNode>& nodes, std::vector<int>& 
 static void deleteBVH(int index, int nextIndex, std::vector<BVHNode>& nodes, std::vector<int>& nodeTriIndex) {
 	// last model
 	if (nextIndex == -1) {
-		nodeTriIndex.erase(nodeTriIndex.begin() + nodes[index].startIndex, nodeTriIndex.end());
+		nodeTriIndex.erase(nodeTriIndex.begin() + nodes[index].triIndex, nodeTriIndex.end());
 		nodes.erase(nodes.begin() + index, nodes.end());
 	}
 	else {
 		int indexDiff = nextIndex - index;
-		int triDiff = nodes[nextIndex].startIndex - nodes[index].startIndex;
+		int triDiff = nodes[nextIndex].triIndex - nodes[index].triIndex;
 
-		nodeTriIndex.erase(nodeTriIndex.begin() + nodes[index].startIndex, nodeTriIndex.begin() + nodes[nextIndex].startIndex);
+		nodeTriIndex.erase(nodeTriIndex.begin() + nodes[index].triIndex, nodeTriIndex.begin() + nodes[nextIndex].triIndex);
 		nodes.erase(nodes.begin() + index, nodes.begin() + nextIndex);
 
 		for (int i = index; i < nodes.size(); i++) {
 			nodes[i].leftIndex -= indexDiff;
-			nodes[i].startIndex -= triDiff;
+			nodes[i].triIndex -= triDiff;
 		}
 	}
 }
