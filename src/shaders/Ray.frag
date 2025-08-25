@@ -213,7 +213,7 @@ hitData sphereIntersect(Ray ray, Sphere sphere) {
 
 // slab method
 // https://tavianator.com/2022/ray_box_boundary.html
-bool aabbIntersect(Ray ray, vec3 aabbMin, vec3 aabbMax) {
+float aabbIntersect(Ray ray, vec3 aabbMin, vec3 aabbMax) {
 	float tmin = 0.0f;
 	float tmax = 9999.0f;
 	for (int d = 0; d < 3; d++) {
@@ -223,7 +223,7 @@ bool aabbIntersect(Ray ray, vec3 aabbMin, vec3 aabbMax) {
         tmin = max(tmin, min(min(t1, t2), tmax));
         tmax = min(tmax, max(max(t1, t2), tmin));
     }
-    return tmin < tmax;
+    return tmin < tmax ? tmin : 9999.0f;
 };
 
 hitData bvhIntersect(Ray ray, Model model) {
@@ -236,30 +236,41 @@ hitData bvhIntersect(Ray ray, Model model) {
 	// root node
 	stack[0] = model.BVHIndex;
 	while (index > 0) {
-		BVHNode node = nodes[stack[index - 1]];
-		index--;
-		
-		// node intersections
-		if (aabbIntersect(ray, node.min, node.max)) {
-			debugValues++;
+		BVHNode node = nodes[stack[--index]];				
 
-			// leaf node
-			if (node.triCount > 0) {
-				
-				// triangle intersections
-				for (int i = node.triIndex; i < node.triIndex + node.triCount; i++) {
-					hitData hit = triangleIntersect(ray, triangles[nodeTriIndex[i]]);
-					if (hit.didHit) {
-						if (hit.dist < result.dist) result = hit;
-					}
-				}
+		// leaf node
+		if (node.triCount > 0) {
+			// triangle intersections
+			for (int i = node.triIndex; i < node.triIndex + node.triCount; i++) {
+				hitData hit = triangleIntersect(ray, triangles[nodeTriIndex[i]]);
+				if (hit.didHit && hit.dist < result.dist) result = hit;
+
+				// tri tests debug
+				debugValues.y++;
 			}
+		}
+
+		else {
+			// node tests debug
+			debugValues.x += 2;
+
+			BVHNode left = nodes[node.leftIndex];
+			BVHNode right = nodes[node.leftIndex + 1];
+
+			// node intersections
+			float leftDist = aabbIntersect(ray, left.min, left.max);
+			float rightDist = aabbIntersect(ray, right.min, right.max);
+
+			// closer node pushed to stack last
+			if (leftDist > rightDist) {
+				if (leftDist < result.dist) stack[index++] = node.leftIndex;
+				if (rightDist < result.dist) stack[index++] = node.leftIndex + 1;
+			} 
 			else {
-				stack[index] = node.leftIndex + 1;
-				index++;
-				stack[index] = node.leftIndex;
-				index++;
-			}
+				if (rightDist < result.dist) stack[index++] = node.leftIndex + 1;
+				if (leftDist < result.dist) stack[index++] = node.leftIndex;
+			}	
+
 		}
 	}
 
@@ -285,10 +296,10 @@ hitData getCollision(Ray ray) {
 		}
 	}
 
+
 	// save ray to restore from model space
 	vec3 originalOrigin = ray.origin;
 	vec3 originalDir = ray.dir;
-
 
 	// model (bvh & triangle) intersections
 	for (int i = 0; i < modelsLength; i++) {
@@ -298,6 +309,10 @@ hitData getCollision(Ray ray) {
 		ray.origin = (model.invTransform * vec4(originalOrigin, 1.0f)).xyz;
 		ray.dir = (model.invTransform * vec4(originalDir, 0.0f)).xyz;
 		ray.invDir = 1.0f / ray.dir;
+
+		// skips bvh intersection tests if closer found
+		if (aabbIntersect(ray, nodes[model.BVHIndex].min, nodes[model.BVHIndex].max) >= result.dist)
+			continue;
 
 		hit = bvhIntersect(ray, model);
 		if (hit.dist < result.dist) {
@@ -313,37 +328,6 @@ hitData getCollision(Ray ray) {
 
 	// restore ray back to world space
 	ray.dir = originalDir;
-
-	/*
-	
-	// model (triangle) intersections
-	for (int i = 0; i < modelsLength; i++) {
-		Model model = models[i];
-
-		// transform ray to model space
-		ray.origin = (model.invTransform * vec4(originalOrigin, 1.0f)).xyz;
-		ray.dir = (model.invTransform * vec4(originalDir, 0.0f)).xyz;
-
-		for (int t = model.startIndex; t <= model.endIndex; t++) {
-			hit = triangleIntersect(ray, triangles[t]);
-			if (hit.didHit) {
-				if (hit.dist < result.dist) {
-					result = hit;
-
-					// transform result to world space
-					result.pos = originalOrigin + originalDir * result.dist;
-					result.normal = normalize((model.transform * vec4(hit.normal, 0.0f)).xyz);
-
-					result.mat = materials[model.matIndex];
-				}
-			}
-		}
-	}
-	
-
-	// restore ray back to world space
-	ray.dir = originalDir;
-	*/
 
 	return result;
 };
@@ -460,5 +444,5 @@ void main() {
 	
 	// final output color
 	//FragColor = vec4(totalLight, 1.0f);
-	FragColor = debugValues / 100.0f;
+	FragColor = vec4(debugValues.x / 300.0f, debugValues.y / 100.0f, 0.0f, 1.0f);
 };
